@@ -8,13 +8,14 @@ Example server invocation:
 
 ```sh
 export RAMP_TOKEN='replace-with-a-long-random-secret'
-go run ./server/cmd/ramp-server -listen :8443 -cert /secure/path/server.crt -key /secure/path/server.key -token "$RAMP_TOKEN"
+go run ./server/cmd/ramp-server -listen :8443 -cert /secure/path/server.crt -key /secure/path/server.key
 ```
 
 Example client invocation:
 
 ```sh
-go run ./client/cmd/ramp-client -listen 127.0.0.1:1080 -server bridge.example:8443 -server-name bridge.example -ca /secure/path/ca.crt -token "$RAMP_TOKEN"
+export RAMP_TOKEN='replace-with-a-long-random-secret'
+go run ./client/cmd/ramp-client -listen 127.0.0.1:1080 -server bridge.example:8443 -server-name bridge.example -ca /secure/path/ca.crt
 ```
 
 The local SOCKS5 listener defaults to loopback. Keep it there unless you have added and reviewed local-client authentication and firewall rules.
