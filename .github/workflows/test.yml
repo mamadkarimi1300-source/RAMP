@@ -1,0 +1,25 @@
+name: Go tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [protocol, client, server]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Test module
+        working-directory: ${{ matrix.module }}
+        run: go test ./...
+      - name: Vet module
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
