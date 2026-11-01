@@ -4,10 +4,11 @@ The client is an independent Go module. It exposes a loopback SOCKS5 CONNECT lis
 
 ## Run
 
-The server certificate must be trusted by the CA file and include the configured server name in its SAN.
+The server certificate must be trusted by the CA file and include the configured server name in its SAN. Set the shared token in the environment rather than exposing it in shell history or process arguments.
 
 ```sh
-go run ./cmd/ramp-client -listen 127.0.0.1:1080 -server bridge.example:8443 -server-name bridge.example -ca ../deployments/certs/ca.crt -token "$RAMP_TOKEN"
+export RAMP_TOKEN='replace-with-a-long-random-secret'
+go run ./cmd/ramp-client -listen 127.0.0.1:1080 -server bridge.example:8443 -server-name bridge.example -ca ../deployments/certs/ca.crt
 ```
 
 Configure applications to use SOCKS5 at `127.0.0.1:1080`.
