@@ -1,49 +1,44 @@
 # RAMP
 ## Resilient Adaptive Multipath Proxy
 
-RAMP is an experimental Go-based resilient access network architecture. It is designed around independently deployable client and server programs, pluggable transports, multiple bridges, path measurement, session lifecycle management, and bounded recovery.
+RAMP is an experimental Go-based resilient access network architecture. It separates the user-side client from the remote bridge/egress server and provides explicit boundaries for transport selection, bridge selection, measurement, sessions and recovery.
 
-> Status: architecture baseline / early development. This repository does not yet claim production readiness or guaranteed censorship circumvention.
+> Status: early development baseline. This repository does not claim production readiness or guaranteed censorship circumvention.
 
 ## Repository layout
 
-- `client/`: user-side application, SOCKS5 ingress, access selection, session and recovery components.
-- `server/`: bridge listener, authenticated tunnel endpoint, egress connector and server lifecycle.
-- `protocol/`: versioned wire messages and shared protocol contracts.
-- `docs/`: architecture, data flow, threat model, test plan and roadmap.
-- `deployments/`: example service and container deployment assets.
+- `client/`: independent user-side Go module with SOCKS5 CONNECT ingress, TLS tunnel dialer, access selection, measurement types, session lifecycle and recovery primitives.
+- `server/`: independent server-side Go module with TLS bridge, token validation, TCP egress connector and health registry.
+- `protocol/`: shared, versioned wire protocol module.
+- `docs/`: architecture, threat model, testing and roadmap.
+- `deployments/`: deployment guidance and secret-handling notes.
 
-Client and server are separate Go modules. The root `go.work` file ties the local modules together for development.
+The root `go.work` file joins the three modules for local development. Client and server remain independently buildable and deployable.
 
-## Design goals
+## Implemented baseline
 
-1. Keep the data plane separate from the control plane.
-2. Keep bridge selection separate from transport selection.
-3. Measure availability, RTT, throughput and failure history instead of selecting on a single metric.
-4. Make transport adapters replaceable behind a small interface.
-5. Track session state explicitly and distinguish reconnect from true transfer resumption.
-6. Authenticate peers and protect configuration; never invent cryptography.
-7. Keep telemetry minimal and avoid collecting destination browsing history.
+- SOCKS5 CONNECT ingress on the client.
+- TLS 1.3 client-to-bridge tunnel with certificate and server-name verification.
+- Shared-token authentication inside TLS.
+- Server-side TCP connection to the requested destination.
+- Versioned and length-bounded tunnel handshake.
+- Session state manager, path-candidate selector and bounded retry backoff primitives.
+- Ed25519 signed-configuration verification primitive.
+- Server component health registry.
+- Unit tests and GitHub Actions test/vet workflow.
 
-## Initial implementation scope
+## Staged features
 
-The first baseline focuses on clean module boundaries, a client/server process split, protocol versioning, transport interfaces, health and recovery contracts, and buildable tests. TCP/TLS and QUIC adapters, full SOCKS5 forwarding, discovery, and resumable application transfers are staged features and must be marked complete only after integration tests demonstrate them.
+QUIC, WebRTC and other pluggable transports; multi-bridge discovery; live path measurement; automatic bridge failover; control-plane distribution; key rotation/revocation; and resumable application transfers are not yet complete. See [docs/roadmap.md](docs/roadmap.md).
 
-## Build
+## Build and test
 
-Use Go 1.23 or newer.
-
-```sh
-go work sync
-go test ./...
-```
-
-Run commands inside the relevant module if your Go installation does not support workspace mode:
+Use Go 1.23 or newer. Run each module independently:
 
 ```sh
-cd protocol && go test ./...
-cd client && go test ./...
-cd server && go test ./...
+cd protocol && go test ./... && go vet ./...
+cd ../client && go test ./... && go vet ./...
+cd ../server && go test ./... && go vet ./...
 ```
 
 ## Security and operational limitations
@@ -51,7 +46,8 @@ cd server && go test ./...
 - QUIC requires UDP reachability; it is not a fallback when UDP is unavailable.
 - TLS does not by itself guarantee resistance to traffic classification or blocking.
 - A new bridge cannot transparently continue an arbitrary existing TCP connection. Only application protocols designed for resumption can safely resume transfers.
-- Do not expose an unauthenticated open proxy.
+- Keep the local SOCKS5 listener on loopback and do not expose an unauthenticated open proxy.
+- Never commit private keys, certificates containing private material, production tokens or secrets.
 - Use established, reviewed cryptographic and pluggable-transport implementations.
 
-See [docs/architecture.md](docs/architecture.md), [docs/threat-model.md](docs/threat-model.md), and [docs/roadmap.md](docs/roadmap.md).
+See [docs/architecture.md](docs/architecture.md), [docs/threat-model.md](docs/threat-model.md), [docs/testing.md](docs/testing.md), and [docs/roadmap.md](docs/roadmap.md).
