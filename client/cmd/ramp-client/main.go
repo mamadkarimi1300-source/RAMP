@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/mamadkarimi1300-source/RAMP/client/internal/ingress/socks5"
 	"github.com/mamadkarimi1300-source/RAMP/client/internal/tunnel"
@@ -13,7 +14,7 @@ func main() {
 	server := flag.String("server", "", "RAMP server address, host:port")
 	serverName := flag.String("server-name", "", "TLS server name in the server certificate")
 	ca := flag.String("ca", "", "PEM CA certificate used to verify the server")
-	token := flag.String("token", "", "shared access token (keep it secret)")
+	token := flag.String("token", os.Getenv("RAMP_TOKEN"), "shared access token; prefer RAMP_TOKEN environment variable")
 	flag.Parse()
 
 	dialer, err := tunnel.New(tunnel.Config{Address:*server, ServerName:*serverName, CAFile:*ca, Token:*token})
