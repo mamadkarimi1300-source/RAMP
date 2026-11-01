@@ -1,0 +1,21 @@
+# Local secrets and certificates
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+
+# Go build outputs
+/bin/
+/dist/
+*.test
+coverage.out
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
