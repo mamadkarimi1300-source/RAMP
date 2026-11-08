@@ -17,16 +17,19 @@
 - [x] Laboratory topology and separation-of-concerns specification.
 - [x] Initial network scenario matrix and experiment metadata/metric contract.
 
-## Laboratory implementation stages
+## Laboratory scaffold committed (runtime validation pending)
 
-- [ ] Build and validate multi-stage Docker images for client and server without merging Go module boundaries.
-- [ ] Implement isolated client-side and bridge-side Docker networks with a transit emulator as the only client-to-bridge route.
-- [ ] Provision lab-only CA/certificate and token without committing secrets.
-- [ ] Add controlled HTTP/TCP destination and repeatable workload generator.
-- [ ] Apply and verify bidirectional delay, jitter, packet loss and bandwidth profiles on the real transit path.
-- [ ] Collect raw RTT, throughput/goodput, connect/handshake timing, CPU, memory and container/network counters.
-- [ ] Add experiment runner, manifests, repetitions and machine-readable result output.
-- [ ] Add report generation and baseline comparison.
+- [x] Add separate Docker build definitions for the existing client and server modules.
+- [x] Add Compose topology with client zone, bridge zone and a transit-router service.
+- [x] Add local-only CA and bridge certificate generation helper.
+- [x] Add Linux traffic-shaping configuration for delay, jitter, loss and rate limits.
+- [x] Add a controlled HTTP destination and direct-versus-SOCKS5 smoke-test instructions.
+- [ ] Build both images and validate Compose configuration on Docker Desktop / WSL2.
+- [ ] Prove forward and return traffic traverse the emulator; confirm no bypass route exists.
+- [ ] Verify each impairment profile against independent measurements.
+- [ ] Add a repeatable workload runner with experiment IDs, repetitions and raw result manifests.
+- [ ] Collect RTT, throughput/goodput, connect/handshake timing, CPU, memory and container/network counters.
+- [ ] Add report generation and statistical baseline comparison.
 - [ ] Add failure-injection tests for bridge unavailability and recovery behavior.
 
 ## v0.2 target
@@ -37,7 +40,6 @@
 - [ ] Selector fed by live measurements, with hysteresis and retry budgets.
 - [ ] Bridge health probes and bridge failover for new sessions.
 - [ ] Structured logs with transport, bridge, outcome and recovery reason.
-- [ ] Deployment manifests and reproducible local test environment.
 - [ ] Multi-network test matrix and benchmark report.
 
 ## Selected v0.3 capabilities brought forward
@@ -59,4 +61,4 @@
 - User interface and administrative dashboard.
 - Scale, abuse-resistance and independent security review.
 
-A checkbox is marked complete only when code and tests are present. A design placeholder or interface alone is not a completed transport or recovery feature. Laboratory design documents do not mean that the Docker testbed or its measurements are already operational.
+A checkbox is marked complete only when the corresponding files or code are present. Runtime-validation items remain unchecked until executed and verified. A design placeholder or interface alone is not a completed transport or recovery feature.
