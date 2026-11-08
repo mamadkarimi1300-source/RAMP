@@ -38,7 +38,7 @@ Store timestamped samples where available. Preserve raw observations; do not kee
 | Packet loss | percent | Emulator counters or packet-level observation |
 | Jitter | ms | Variation of explicitly defined RTT/one-way samples |
 | Connect duration | ms | Client-side monotonic timer |
-| TLS handshake duration | ms | Certificate-verified curl `time_appconnect` probe to the bridge; excludes the RAMP OPEN application handshake |
+| TLS handshake duration | ms | Certificate-verified curl probe; `time_appconnect - time_connect` isolates TLS handshake time from TCP connection setup and excludes the RAMP OPEN application handshake |
 | Transfer duration | ms | Workload timer |
 | Success / failure | count and ratio | Workload result |
 | CPU / memory | percent / bytes | Container snapshots via Docker stats (coarse, after each scenario) |
