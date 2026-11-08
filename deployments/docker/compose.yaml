@@ -1,0 +1,102 @@
+services:
+  netem-router:
+    build:
+      context: .
+      dockerfile: netem/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    environment:
+      RAMP_NETEM_DELAY: ${RAMP_NETEM_DELAY:-0ms}
+      RAMP_NETEM_JITTER: ${RAMP_NETEM_JITTER:-0ms}
+      RAMP_NETEM_LOSS: ${RAMP_NETEM_LOSS:-0%}
+      RAMP_NETEM_RATE: ${RAMP_NETEM_RATE:-}
+    networks:
+      client-zone:
+        ipv4_address: 172.28.10.1
+      bridge-zone:
+        ipv4_address: 172.28.20.1
+    restart: unless-stopped
+
+  ramp-client:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/client.Dockerfile
+    depends_on:
+      - netem-router
+    cap_add:
+      - NET_ADMIN
+    environment:
+      RAMP_TOKEN: ${RAMP_TOKEN:?Set RAMP_TOKEN before starting the lab}
+      RAMP_CLIENT_DB_PATH: /var/lib/ramp/client.db
+    command:
+      - sh
+      - -ec
+      - |
+        ip route replace 172.28.20.0/24 via 172.28.10.1
+        exec /usr/local/bin/ramp-client \
+          -listen 0.0.0.0:1080 \
+          -server 172.28.20.10:8443 \
+          -server-name ramp-bridge \
+          -ca /certs/ca.crt
+    volumes:
+      - client-data:/var/lib/ramp
+      - ./certs:/certs:ro
+    ports:
+      - "127.0.0.1:1080:1080"
+    networks:
+      client-zone:
+        ipv4_address: 172.28.10.10
+    restart: unless-stopped
+
+  ramp-bridge:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/bridge.Dockerfile
+    depends_on:
+      - netem-router
+      - destination
+    environment:
+      RAMP_TOKEN: ${RAMP_TOKEN:?Set RAMP_TOKEN before starting the lab}
+      RAMP_SERVER_DB_PATH: /var/lib/ramp/server.db
+    command:
+      - sh
+      - -ec
+      - |
+        ip route replace 172.28.10.0/24 via 172.28.20.1
+        exec /usr/local/bin/ramp-server \
+          -listen :8443 \
+          -cert /certs/server.crt \
+          -key /certs/server.key
+    volumes:
+      - server-data:/var/lib/ramp
+      - ./certs:/certs:ro
+    networks:
+      bridge-zone:
+        ipv4_address: 172.28.20.10
+    restart: unless-stopped
+
+  destination:
+    image: nginx:1.27-alpine
+    networks:
+      bridge-zone:
+        aliases:
+          - lab-destination
+    restart: unless-stopped
+
+networks:
+  client-zone:
+    name: ramp-lab-client-zone
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
+  bridge-zone:
+    name: ramp-lab-bridge-zone
+    ipam:
+      config:
+        - subnet: 172.28.20.0/24
+
+volumes:
+  client-data:
+  server-data:
