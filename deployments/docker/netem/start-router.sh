@@ -13,7 +13,11 @@ if [ -z "$CLIENT_IF" ] || [ -z "$BRIDGE_IF" ]; then
   exit 1
 fi
 
-sysctl -w net.ipv4.ip_forward=1 >/dev/null
+FORWARDING="$(cat /proc/sys/net/ipv4/ip_forward)"
+if [ "$FORWARDING" != "1" ]; then
+  echo "IPv4 forwarding must be enabled by the Docker Compose sysctl setting" >&2
+  exit 1
+fi
 iptables -P FORWARD ACCEPT
 
 DELAY="${RAMP_NETEM_DELAY:-0ms}"
