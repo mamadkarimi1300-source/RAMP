@@ -44,7 +44,7 @@ The laboratory is designed to run the real RAMP client and bridge against a cont
 
 Start with [laboratory/README.md](laboratory/README.md), [laboratory/topology.md](laboratory/topology.md), and [deployments/docker/README.md](deployments/docker/README.md).
 
-**Status:** the laboratory architecture, scenario/experiment specifications, Dockerfiles, Compose topology, repeatable smoke-test script and GitHub Actions Docker integration workflow are committed. The smoke test is designed to build the images, exercise direct and SOCKS5 traffic, capture the client-to-bridge path on the transit router and verify NetEm configuration. Runtime validation is pending until the workflow and a local Docker Desktop/WSL2 run pass. Metric collection, experiment orchestration and benchmark reporting are not yet implemented. Do not treat scenario definitions as measured results.
+**Status:** the laboratory architecture, scenario/experiment specifications, Dockerfiles, Compose topology, repeatable smoke-test script and GitHub Actions Docker integration workflow are committed. The smoke test is designed to build the images, exercise direct and SOCKS5 traffic, capture the client-to-bridge path on the transit router and verify NetEm configuration. Runtime validation is pending until the workflow and a local Docker Desktop/WSL2 run pass. A controlled HTTP workload destination, machine-readable scenario matrix, experiment runner, raw sample capture, statistics/report generation and CI test integration are now committed. Actual Docker execution and measured benchmark results remain pending; do not treat scenario definitions as measured results.
 
 ## Staged features
 
