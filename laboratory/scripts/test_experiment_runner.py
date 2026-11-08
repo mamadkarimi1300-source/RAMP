@@ -53,6 +53,18 @@ class ExperimentRunnerTests(unittest.TestCase):
         self.assertAlmostEqual(ramp["goodput_change_vs_direct_percent"], -20.0)
         self.assertAlmostEqual(ramp["transfer_duration_change_vs_direct_percent"], 25.0)
 
+    def test_parse_ping_output_extracts_rtt_and_loss(self):
+        output = (
+            "5 packets transmitted, 4 received, 20% packet loss, time 801ms\\n"
+            "rtt min/avg/max/mdev = 10.000/20.000/30.000/5.000 ms\\n"
+        )
+        parsed = RUNNER.parse_ping_output(output)
+        self.assertEqual(parsed["loss_percent"], 20.0)
+        self.assertEqual(parsed["min_ms"], 10.0)
+        self.assertEqual(parsed["avg_ms"], 20.0)
+        self.assertEqual(parsed["max_ms"], 30.0)
+        self.assertEqual(parsed["mdev_ms"], 5.0)
+
 
 if __name__ == "__main__":
     unittest.main()
