@@ -42,6 +42,17 @@ class ExperimentRunnerTests(unittest.TestCase):
         self.assertEqual({(x["scenario_id"], x["mode"]) for x in rows},
                          {("baseline", "direct"), ("baseline", "ramp-fixed")})
 
+    def test_summary_computes_ramp_delta_against_direct(self):
+        rows = RUNNER.summarize([
+            {"scenario_id": "latency-100ms", "mode": "direct", "success": True,
+             "goodput_mbps": 10.0, "transfer_duration_ms": 100.0},
+            {"scenario_id": "latency-100ms", "mode": "ramp-fixed", "success": True,
+             "goodput_mbps": 8.0, "transfer_duration_ms": 125.0},
+        ])
+        ramp = next(x for x in rows if x["mode"] == "ramp-fixed")
+        self.assertAlmostEqual(ramp["goodput_change_vs_direct_percent"], -20.0)
+        self.assertAlmostEqual(ramp["transfer_duration_change_vs_direct_percent"], 25.0)
+
 
 if __name__ == "__main__":
     unittest.main()
