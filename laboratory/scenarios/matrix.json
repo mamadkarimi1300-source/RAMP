@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "description": "Machine-readable laboratory profiles. These are configured targets, not measured results.",
+  "defaults": {
+    "repetitions": 5,
+    "warmup_repetitions": 1,
+    "payload_bytes": 10485760,
+    "max_time_seconds": 120
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "description": "No intentional network impairment.",
+      "delay_ms": 0,
+      "jitter_ms": 0,
+      "loss_percent": 0,
+      "rate_mbit": null
+    },
+    {
+      "id": "latency-100ms",
+      "description": "100ms additional delay on each router egress.",
+      "delay_ms": 100,
+      "jitter_ms": 0,
+      "loss_percent": 0,
+      "rate_mbit": null
+    },
+    {
+      "id": "latency-200ms",
+      "description": "200ms additional delay on each router egress.",
+      "delay_ms": 200,
+      "jitter_ms": 0,
+      "loss_percent": 0,
+      "rate_mbit": null
+    },
+    {
+      "id": "jitter-30ms",
+      "description": "50ms delay with 30ms jitter on each router egress.",
+      "delay_ms": 50,
+      "jitter_ms": 30,
+      "loss_percent": 0,
+      "rate_mbit": null
+    },
+    {
+      "id": "loss-1pct",
+      "description": "20ms delay and 1% packet loss on each router egress.",
+      "delay_ms": 20,
+      "jitter_ms": 0,
+      "loss_percent": 1,
+      "rate_mbit": null
+    },
+    {
+      "id": "loss-3pct",
+      "description": "20ms delay and 3% packet loss on each router egress.",
+      "delay_ms": 20,
+      "jitter_ms": 0,
+      "loss_percent": 3,
+      "rate_mbit": null
+    },
+    {
+      "id": "bandwidth-5mbit",
+      "description": "20ms delay and 5Mbit/s egress shaping on both router interfaces.",
+      "delay_ms": 20,
+      "jitter_ms": 0,
+      "loss_percent": 0,
+      "rate_mbit": 5
+    },
+    {
+      "id": "combined-degraded",
+      "description": "Combined delay, jitter, loss and rate limit.",
+      "delay_ms": 100,
+      "jitter_ms": 20,
+      "loss_percent": 1,
+      "rate_mbit": 5
+    }
+  ]
+}
