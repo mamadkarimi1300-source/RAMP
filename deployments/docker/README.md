@@ -1,43 +1,99 @@
 # Docker Laboratory Deployment
 
-This directory is reserved for the reproducible local testbed deployment.
+This directory contains the first local Docker testbed implementation. It builds the existing RAMP client and bridge as separate images and places a Linux traffic-emulation router between isolated client and bridge network zones.
 
-## Target services
+## Topology
 
 - `ramp-client`: built from the existing `client` Go module.
 - `ramp-bridge`: built from the existing `server` Go module.
-- `destination`: controlled HTTP/TCP test endpoint.
-- `netem-router`: isolated transit router with Linux traffic-control capability.
-- `collector`: collects host/container and network observations.
-- Optional dashboard services can be added after metric names and retention are stable.
+- `destination`: controlled Nginx HTTP endpoint on the bridge-side network.
+- `netem-router`: dual-homed Linux router; it is the intended transit path between client and bridge.
+- Client and bridge each have a separate persistent SQLite volume.
 
-## Important routing requirement
+The client has a specific route to the bridge-side subnet through the router. The bridge has a return route to the client-side subnet through the same router. The destination is reachable from the bridge-side network.
 
-A Compose file that merely starts a client, bridge and destination on one shared Docker network is not a network-emulation testbed: traffic may bypass the impairment point.
+## Prerequisites
 
-The intended topology places the client and bridge in separate network zones and makes the emulator the only transit path between them. The bridge-side destination remains reachable from the bridge. Both forward and return routes must traverse the emulator.
+- Docker Desktop with the WSL2 backend and Docker Compose v2.
+- A WSL2 Linux shell with OpenSSL and curl.
+- Go is not required on the host for container builds.
+- The subnets `172.28.10.0/24` and `172.28.20.0/24` must not conflict with existing VPN, LAN or Docker networks.
 
-The router needs narrowly scoped network-administration capabilities (for example, `NET_ADMIN`) to configure forwarding and traffic control. Avoid `privileged: true` unless a tested host/runtime limitation makes it unavoidable; document any exception.
+## Start the lab
 
-## Certificate and secret provisioning
+From the repository root in WSL2:
 
-Generate a local test CA and a bridge certificate with a SAN matching the client `-server-name`. Mount certificates read-only. Supply a unique lab token through an ignored local env file or secret mechanism. Never commit private keys, generated credentials or real user data.
+1. Generate local-only TLS credentials:
 
-## Host compatibility
+   ```sh
+   sh deployments/docker/generate-certs.sh
+   ```
 
-The initial target is Docker Desktop on Windows with a WSL2 Linux backend. Linux traffic shaping and routing behavior must be verified inside the Linux containers/kernel used by Docker Desktop. Do not assume that host-side Windows networking applies the same `tc netem` configuration.
+2. Set a unique lab token in the current shell:
 
-## Readiness checklist
+   ```sh
+   export RAMP_TOKEN="$(openssl rand -hex 32)"
+   ```
 
-- [ ] Multi-stage Dockerfiles build both Go modules from the repository root without changing module boundaries.
-- [ ] Compose creates isolated client and bridge networks.
-- [ ] Client-to-bridge forward and return routes traverse the emulator.
-- [ ] Destination is reachable only from the bridge-side network.
-- [ ] TLS certificate verification succeeds with the lab CA.
-- [ ] Wrong CA and wrong token tests fail as expected.
-- [ ] A non-zero delay profile measurably changes the client-to-bridge path.
-- [ ] Removing impairment restores baseline behavior.
-- [ ] RAMP SQLite databases and laboratory run artifacts persist in separate volumes/directories.
-- [ ] Shutdown does not silently discard the final experiment manifest.
+3. Start the testbed:
 
-This deployment is a design specification, not a claim that a runnable Compose environment has already been validated.
+   ```sh
+   docker compose -f deployments/docker/compose.yaml up --build -d
+   ```
+
+4. Inspect service status and logs:
+
+   ```sh
+   docker compose -f deployments/docker/compose.yaml ps
+   docker compose -f deployments/docker/compose.yaml logs -f netem-router ramp-bridge ramp-client
+   ```
+
+5. Send an HTTP request through the local SOCKS5 listener:
+
+   ```sh
+   curl --fail --show-error --socks5-hostname 127.0.0.1:1080 http://lab-destination/
+   ```
+
+The hostname is resolved from the bridge-side network. The local SOCKS5 port is published only on host loopback.
+
+## Apply a network condition
+
+Recreate the router with the selected environment variables. Example for 100 ms delay in each direction and 1% packet loss:
+
+```sh
+RAMP_TOKEN="$RAMP_TOKEN" RAMP_NETEM_DELAY=100ms RAMP_NETEM_LOSS=1% docker compose -f deployments/docker/compose.yaml up --build -d --force-recreate netem-router
+```
+
+For a 5 Mbit/s rate limit:
+
+```sh
+RAMP_TOKEN="$RAMP_TOKEN" RAMP_NETEM_RATE=5mbit docker compose -f deployments/docker/compose.yaml up -d --force-recreate netem-router
+```
+
+The delay is applied on both router egress interfaces, so 100 ms configured in this way is approximately 100 ms added per direction (before other network effects). Confirm the actual effect with independent measurements; do not assume the configured value equals measured end-to-end RTT.
+
+## Stop and clean up
+
+```sh
+docker compose -f deployments/docker/compose.yaml down
+```
+
+To remove lab databases as well:
+
+```sh
+docker compose -f deployments/docker/compose.yaml down -v
+```
+
+The second command permanently deletes the named client and server database volumes.
+
+## Important validation status
+
+The Compose topology and container build files are committed, but they have not yet been executed in this environment. Docker Desktop routing/forwarding rules may require adjustment. Before collecting benchmark data, verify:
+
+- Both forward and return traffic cross the emulator (capture on both router interfaces).
+- A non-zero impairment changes measured client-to-bridge RTT.
+- The direct path cannot bypass the emulator.
+- Client-to-destination requests succeed with the generated CA and lab token.
+- Removing impairment restores the baseline.
+
+Do not treat this initial Compose scaffold as a validated benchmark environment until those checks pass.
