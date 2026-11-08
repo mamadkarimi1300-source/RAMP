@@ -141,7 +141,7 @@ The second command permanently deletes the named client and server database volu
 
 ## Important validation status
 
-The Compose topology and container build files are committed, but they have not yet been executed in this environment. Docker Desktop routing/forwarding rules may require adjustment. Before collecting benchmark data, verify:
+The Docker lab has passed its GitHub Actions integration run on a GitHub-hosted Ubuntu runner: all images built, direct and SOCKS5 requests succeeded, client-to-bridge and destination-return packets were captured on the transit router, and the 50 ms NetEm qdisc was installed. This does not yet validate the user's local Docker Desktop/WSL2 environment or independently prove the measured RTT effect. Before accepting research benchmark data, verify:
 
 - Both forward and return traffic cross the emulator (capture on both router interfaces).
 - A non-zero impairment changes measured client-to-bridge RTT.
