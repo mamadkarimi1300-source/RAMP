@@ -11,6 +11,8 @@ export RAMP_TOKEN='replace-with-a-long-random-secret'
 go run ./cmd/ramp-client -listen 127.0.0.1:1080 -server bridge.example:8443 -server-name bridge.example -ca ../deployments/certs/ca.crt
 ```
 
+The client creates `data/client.db` by default. Override the path with `RAMP_CLIENT_DB_PATH` or `-db`. The database records local SOCKS5 sessions, selected transport, destination, connection latency, failures and directional byte counts.
+
 Configure applications to use SOCKS5 at `127.0.0.1:1080`.
 
 Current scope: SOCKS5 CONNECT and one TCP/TLS upstream path. UDP ASSOCIATE, BIND, user/password auth on the local SOCKS listener, multi-bridge discovery, QUIC and transparent session migration are not implemented yet.
