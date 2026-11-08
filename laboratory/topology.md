@@ -7,41 +7,40 @@ Workload / curl
      |
      | SOCKS5
      v
-RAMP Client
+RAMP Client (172.28.10.10)
      |
-     | TCP + TLS 1.3 + RAMP protocol
+     | route via 172.28.10.2
      v
 Network Emulator
      |
-     | shaped / impaired link
+     | 172.28.20.2 -> 172.28.20.10
      v
-RAMP Bridge
+RAMP Bridge (172.28.20.10)
      |
-     | destination TCP connection
+     | destination TCP
      v
-Controlled Destination
+Controlled Destination (172.28.20.11)
 
 All roles ----> Laboratory collector ----> Run results / reports
 ```
 
 ## Network zones
 
-The intended local testbed uses separate network zones:
+The initial Docker topology uses two isolated subnets:
 
-- **Client zone:** application workload and RAMP client.
-- **Bridge zone:** RAMP bridge and controlled destination.
-- **Transit zone:** network-emulation router connecting the client and bridge zones.
+- **Client zone:** `172.28.10.0/24`; client at `172.28.10.10`, router at `172.28.10.2`.
+- **Bridge zone:** `172.28.20.0/24`; router at `172.28.20.2`, bridge at `172.28.20.10`, destination at `172.28.20.11`.
 
-The client must not have a direct route to the bridge that bypasses the emulator. The bridge must have a return route through the emulator for the client-side tunnel. The destination is reachable from the bridge-side network so destination traffic is not accidentally shaped as if it were part of the client-to-bridge link.
+The client has a route for `172.28.20.0/24` via `172.28.10.2`. The bridge has a return route for `172.28.10.0/24` via `172.28.20.2`. The Docker network gateway addresses are not assigned to the router. These subnets must be checked for conflicts with existing VPN, LAN and Docker networks.
 
-The exact Docker network names, CIDRs, static addresses and interface discovery rules belong in the deployment configuration. They must be documented and checked for conflicts before startup.
+The destination is reachable from the bridge-side network so destination traffic is not accidentally shaped as if it were part of the client-to-bridge link.
 
 ## Traffic path validation
 
 Before accepting any measurement:
 
 1. Confirm the client can reach the bridge only through the emulation router.
-2. Capture or inspect traffic on both sides of the router.
+2. Capture packets on both router interfaces and confirm the request and return traffic traverse them.
 3. Apply a non-zero delay and verify that observed tunnel RTT changes.
 4. Remove the impairment and verify the baseline returns.
 5. Confirm the bridge can reach the destination independently.
@@ -51,7 +50,7 @@ A scenario is invalid if the traffic bypasses the emulator or if the impairment 
 
 ## Isolation and safety
 
-- Bind the SOCKS5 listener to loopback unless a separately reviewed lab-only network policy is in place.
+- The SOCKS5 listener is published on host loopback only; it listens on the client container interface inside the isolated lab network.
 - Use test-only tokens and locally generated certificates.
 - Do not mount production secrets into containers.
 - Keep the lab isolated from the host's default network and avoid exposing the bridge port publicly.
@@ -60,8 +59,8 @@ A scenario is invalid if the traffic bypasses the emulator or if the impairment 
 
 ## Baseline comparison paths
 
-1. **Direct baseline:** workload connects directly to the controlled destination.
-2. **RAMP fixed path:** workload uses the existing client-to-bridge TCP/TLS path.
+1. **Direct baseline:** workload connects from the client container directly to the controlled destination; this still crosses the emulated transit router.
+2. **RAMP fixed path:** workload uses the existing client-to-bridge TCP/TLS path and the same destination.
 3. **RAMP adaptive:** enabled only after live measurement, selector integration and route behavior are implemented and verified.
 
 Do not label the current selector primitives as adaptive operation until real measurements drive decisions in the request path.
