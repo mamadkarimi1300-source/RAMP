@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-CLIENT_ADDR="172.28.10.1/"
-BRIDGE_ADDR="172.28.20.1/"
+CLIENT_ADDR="172.28.10.2/"
+BRIDGE_ADDR="172.28.20.2/"
 
 CLIENT_IF="$(ip -o -4 addr show | awk -v addr="$CLIENT_ADDR" '$4 ~ ("^" addr) {print $2; exit}')"
 BRIDGE_IF="$(ip -o -4 addr show | awk -v addr="$BRIDGE_ADDR" '$4 ~ ("^" addr) {print $2; exit}')"
@@ -39,8 +39,8 @@ apply_netem() {
   fi
 }
 
-# Egress shaping on both router interfaces impairs both directions of the
-# client<->bridge transit path. The destination remains on the bridge zone.
+# Egress shaping on both router interfaces applies impairment in both
+# directions of the client<->bridge path. Destination traffic stays bridge-side.
 apply_netem "$CLIENT_IF"
 apply_netem "$BRIDGE_IF"
 
