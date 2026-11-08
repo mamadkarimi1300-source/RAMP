@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [protocol, client, server]
+        module: [protocol, client, server, storage]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
