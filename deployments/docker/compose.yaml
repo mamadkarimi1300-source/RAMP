@@ -80,12 +80,19 @@ services:
     restart: unless-stopped
 
   destination:
-    image: nginx:1.27-alpine
+    build:
+      context: ../../laboratory/destination
+      dockerfile: Dockerfile
     networks:
       bridge-zone:
         ipv4_address: 172.28.20.11
         aliases:
           - lab-destination
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
 networks:
