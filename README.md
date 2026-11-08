@@ -11,10 +11,11 @@ RAMP is an experimental Go-based resilient access network architecture. It separ
 - `server/`: independent server-side Go module with TLS bridge, token validation, TCP egress connector, health registry and a local SQLite event log.
 - `protocol/`: shared, versioned wire protocol module.
 - `storage/`: shared event contract, bounded asynchronous logger and SQLite repository. Client and server each own a separate database file.
+- `laboratory/`: isolated testbed specification, topology, network scenario matrix and experiment contracts. This is an additive evaluation layer, not part of the production forwarding path.
 - `docs/`: architecture, threat model, testing, storage and roadmap.
-- `deployments/`: deployment guidance and secret-handling notes.
+- `deployments/`: deployment guidance and secret-handling notes, including the Docker laboratory deployment plan.
 
-The root `go.work` file joins the four modules for local development. Client and server remain independently buildable and deployable; the storage module is a shared library, not a network service.
+The root `go.work` file joins the four Go modules for local development. Client and server remain independently buildable and deployable; the storage module is a shared library, not a network service.
 
 ## Implemented baseline
 
@@ -36,6 +37,14 @@ The root `go.work` file joins the four modules for local development. Client and
 - Server: `data/server.db` (override with `RAMP_SERVER_DB_PATH` or `-db`).
 
 Database files are runtime artifacts and are ignored by Git. See [docs/storage.md](docs/storage.md).
+
+## Laboratory and evaluation
+
+The laboratory is designed to run the real RAMP client and bridge against a controlled destination while network conditions are applied on the actual client-to-bridge packet path. It defines repeatable scenarios and an experiment metadata/metric contract.
+
+Start with [laboratory/README.md](laboratory/README.md), [laboratory/topology.md](laboratory/topology.md), and [deployments/docker/README.md](deployments/docker/README.md).
+
+**Status:** the laboratory architecture and scenario/experiment specifications are committed; a runnable, end-to-end Docker testbed and validated metric collection are not yet implemented. Do not treat the scenario definitions as measured results.
 
 ## Staged features
 
