@@ -48,9 +48,9 @@ def summarize(samples):
         good = [x for x in items if x["success"]]
         rates = [x["goodput_mbps"] for x in good]
         durations = [x["transfer_duration_ms"] for x in good]
-        rtts = [x["bridge_rtt_avg_ms"] for x in items if x["bridge_rtt_avg_ms"] is not None]
-        losses = [x["bridge_icmp_loss_percent"] for x in items if x["bridge_icmp_loss_percent"] is not None]
-        handshakes = [x["bridge_tls_handshake_ms"] for x in items if x["bridge_tls_handshake_ms"] is not None]
+        rtts = [x.get("bridge_rtt_avg_ms") for x in items if x.get("bridge_rtt_avg_ms") is not None]
+        losses = [x.get("bridge_icmp_loss_percent") for x in items if x.get("bridge_icmp_loss_percent") is not None]
+        handshakes = [x.get("bridge_tls_handshake_ms") for x in items if x.get("bridge_tls_handshake_ms") is not None]
         rows.append({
             "scenario_id": scenario, "mode": mode, "runs": len(items),
             "successes": len(good), "failures": len(items)-len(good),
