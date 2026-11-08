@@ -32,13 +32,13 @@ Store timestamped samples where available. Preserve raw observations; do not kee
 
 | Metric | Unit | Source / method |
 |---|---|---|
-| RTT | ms | Not yet collected by the current runner; requires a separate documented probe |
+| RTT | ms | Five ICMP echo probes from client to bridge IP through the transit router; min/avg/max/mdev and packet loss retained |
 | Throughput | bit/s | Bytes transferred divided by measured interval |
 | Goodput | bit/s | Application payload bytes divided by interval |
 | Packet loss | percent | Emulator counters or packet-level observation |
 | Jitter | ms | Variation of explicitly defined RTT/one-way samples |
 | Connect duration | ms | Client-side monotonic timer |
-| TLS handshake duration | ms | Not currently instrumented; do not infer it from curl connect time |
+| TLS handshake duration | ms | Certificate-verified curl `time_appconnect` probe to the bridge; excludes the RAMP OPEN application handshake |
 | Transfer duration | ms | Workload timer |
 | Success / failure | count and ratio | Workload result |
 | CPU / memory | percent / bytes | Container snapshots via Docker stats (coarse, after each scenario) |
