@@ -107,7 +107,26 @@ if ! grep -q "172.28.10.10" "$LOG_FILE" || ! grep -q "172.28.20.10" "$LOG_FILE";
   echo "Transit-router capture did not contain the expected client and bridge addresses" >&2
   exit 1
 fi
-echo "Transit packet capture: PASS"
+echo "Client-to-bridge packet capture: PASS"
+
+echo "[4b/6] Verify destination return packets cross the transit router"
+compose exec -T netem-router sh -c "timeout 15 tcpdump -ni any -c 1 'src host 172.28.20.11 and dst host 172.28.10.10'" >"$LOG_FILE" 2>&1 &
+CAPTURE_PID=$!
+sleep 1
+compose exec -T ramp-client curl --fail --silent --show-error --max-time 10 http://172.28.20.11:8080/health >/dev/null
+if ! wait "$CAPTURE_PID"; then
+  CAPTURE_PID=""
+  cat "$LOG_FILE" >&2
+  echo "Destination return packet was not observed on the transit router" >&2
+  exit 1
+fi
+CAPTURE_PID=""
+if ! grep -q "172.28.20.11" "$LOG_FILE" || ! grep -q "172.28.10.10" "$LOG_FILE"; then
+  cat "$LOG_FILE" >&2
+  echo "Transit-router capture did not contain the expected destination and client addresses" >&2
+  exit 1
+fi
+echo "Destination return-path capture: PASS"
 
 echo "[5/6] Apply a controlled delay and verify the qdisc"
 RAMP_NETEM_DELAY=50ms docker compose -f "$COMPOSE_FILE" up -d --force-recreate netem-router
