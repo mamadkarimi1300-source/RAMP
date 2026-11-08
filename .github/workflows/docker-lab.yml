@@ -12,12 +12,42 @@ permissions:
 
 jobs:
   docker-lab:
-    name: Build and exercise RAMP Docker testbed
+    name: Build, exercise and measure RAMP Docker testbed
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate Docker Compose, build images and run laboratory smoke tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate laboratory Python tools and statistics
+        run: |
+          python -m py_compile laboratory/destination/server.py laboratory/scripts/run_experiments.py
+          python -m unittest discover -s laboratory/scripts -p 'test_*.py' -v
+          python laboratory/scripts/run_experiments.py --help
+          python -m json.tool laboratory/scenarios/matrix.json > /dev/null
+
+      - name: Build Docker images and run network-path smoke tests
         run: sh laboratory/scripts/docker-smoke-test.sh
+
+      - name: Run a small direct-versus-RAMP experiment
+        run: |
+          python laboratory/scripts/run_experiments.py \
+            --scenario baseline \
+            --scenario latency-100ms \
+            --repetitions 1 \
+            --warmup 0 \
+            --payload-bytes 1048576
+
+      - name: Upload experiment manifest, raw samples and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ramp-laboratory-results
+          path: laboratory/results/
+          if-no-files-found: warn
+          retention-days: 14
