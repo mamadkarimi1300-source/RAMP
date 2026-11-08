@@ -44,7 +44,7 @@ The laboratory is designed to run the real RAMP client and bridge against a cont
 
 Start with [laboratory/README.md](laboratory/README.md), [laboratory/topology.md](laboratory/topology.md), and [deployments/docker/README.md](deployments/docker/README.md).
 
-**Status:** the laboratory architecture and scenario/experiment specifications are committed; a runnable, end-to-end Docker testbed and validated metric collection are not yet implemented. Do not treat the scenario definitions as measured results.
+**Status:** the laboratory architecture, scenario/experiment specifications, Dockerfiles and initial Compose topology are committed. The Docker testbed has not yet been built or executed in a running environment, its routing and traffic shaping have not been validated, and metric collection/experiment orchestration are not yet implemented. Do not treat the scenario definitions as measured results.
 
 ## Staged features
 
