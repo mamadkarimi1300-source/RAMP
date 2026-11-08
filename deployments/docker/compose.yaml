@@ -83,6 +83,14 @@ services:
     build:
       context: ../../laboratory/destination
       dockerfile: Dockerfile
+    cap_add:
+      - NET_ADMIN
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        ip route replace 172.28.10.0/24 via 172.28.20.2
+        exec python -u /app/server.py
     networks:
       bridge-zone:
         ipv4_address: 172.28.20.11
