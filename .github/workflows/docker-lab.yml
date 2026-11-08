@@ -1,0 +1,23 @@
+name: Docker laboratory
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-lab:
+    name: Build and exercise RAMP Docker testbed
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose, build images and run laboratory smoke tests
+        run: sh laboratory/scripts/docker-smoke-test.sh
