@@ -65,6 +65,16 @@ class ExperimentRunnerTests(unittest.TestCase):
         self.assertEqual(parsed["max_ms"], 30.0)
         self.assertEqual(parsed["mdev_ms"], 5.0)
 
+    def test_parse_tls_probe_separates_tcp_and_tls_time(self):
+        parsed = RUNNER.parse_tls_probe("0.200000,0.404000")
+        self.assertAlmostEqual(parsed["tcp_connect_ms"], 200.0)
+        self.assertAlmostEqual(parsed["tls_handshake_ms"], 204.0)
+
+    def test_parse_tls_probe_rejects_missing_timings(self):
+        parsed = RUNNER.parse_tls_probe("0.200000")
+        self.assertIsNone(parsed["tcp_connect_ms"])
+        self.assertIsNone(parsed["tls_handshake_ms"])
+
 
 if __name__ == "__main__":
     unittest.main()
