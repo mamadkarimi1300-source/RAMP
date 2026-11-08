@@ -253,7 +253,7 @@ def main():
                 q_after = compose("exec", "-T", "netem-router", "tc", "-s", "qdisc", "show",
                                   env=profile, check=False)
                 with (rawdir / "qdisc.txt").open("a", encoding="utf-8") as qf:
-                    qf.write(f"\\n### {sid} after workload\\n{q_after.stdout}\\n{q_after.stderr}\\n")
+                    qf.write(f"\n### {sid} after workload\n{q_after.stdout}\n{q_after.stderr}\n")
                 if q_after.returncode:
                     raise RuntimeError("post-workload qdisc inspection failed for " + sid)
 
