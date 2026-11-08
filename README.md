@@ -7,13 +7,14 @@ RAMP is an experimental Go-based resilient access network architecture. It separ
 
 ## Repository layout
 
-- `client/`: independent user-side Go module with SOCKS5 CONNECT ingress, TLS tunnel dialer, access selection, measurement types, session lifecycle and recovery primitives.
-- `server/`: independent server-side Go module with TLS bridge, token validation, TCP egress connector and health registry.
+- `client/`: independent user-side Go module with SOCKS5 CONNECT ingress, TLS tunnel dialer, access selection, measurement types, session lifecycle, recovery primitives and a local SQLite event log.
+- `server/`: independent server-side Go module with TLS bridge, token validation, TCP egress connector, health registry and a local SQLite event log.
 - `protocol/`: shared, versioned wire protocol module.
-- `docs/`: architecture, threat model, testing and roadmap.
+- `storage/`: shared event contract, bounded asynchronous logger and SQLite repository. Client and server each own a separate database file.
+- `docs/`: architecture, threat model, testing, storage and roadmap.
 - `deployments/`: deployment guidance and secret-handling notes.
 
-The root `go.work` file joins the three modules for local development. Client and server remain independently buildable and deployable.
+The root `go.work` file joins the four modules for local development. Client and server remain independently buildable and deployable; the storage module is a shared library, not a network service.
 
 ## Implemented baseline
 
@@ -25,7 +26,16 @@ The root `go.work` file joins the three modules for local development. Client an
 - Session state manager, path-candidate selector and bounded retry backoff primitives.
 - Ed25519 signed-configuration verification primitive.
 - Server component health registry.
-- Unit tests and GitHub Actions test/vet workflow.
+- SQLite event logging on both client and server, including connection lifecycle, transport, destination, dial latency, transfer byte counts and failures.
+- Bounded asynchronous event queue; dropped events and database write errors are counted and reported at shutdown.
+- Unit tests and GitHub Actions test/vet workflow for all four modules.
+
+## Database locations
+
+- Client: `data/client.db` (override with `RAMP_CLIENT_DB_PATH` or `-db`).
+- Server: `data/server.db` (override with `RAMP_SERVER_DB_PATH` or `-db`).
+
+Database files are runtime artifacts and are ignored by Git. See [docs/storage.md](docs/storage.md).
 
 ## Staged features
 
@@ -39,6 +49,7 @@ Use Go 1.23 or newer. Run each module independently:
 cd protocol && go test ./... && go vet ./...
 cd ../client && go test ./... && go vet ./...
 cd ../server && go test ./... && go vet ./...
+cd ../storage && go test ./... && go vet ./...
 ```
 
 ## Security and operational limitations
