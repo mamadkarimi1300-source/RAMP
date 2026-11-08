@@ -76,7 +76,7 @@ From the repository root in WSL2:
    docker compose -f deployments/docker/compose.yaml exec ramp-client curl --fail --show-error --socks5-hostname 127.0.0.1:1080 http://lab-destination:8080/health
    ```
 
-   You can also test from the host using `curl --socks5-hostname 127.0.0.1:1080 http://lab-destination/`.
+   You can also test from the host using `curl --socks5-hostname 127.0.0.1:1080 http://lab-destination:8080/health`.
 
 ## Run repeatable experiments
 
