@@ -31,7 +31,7 @@ cleanup() {
   rm -f "$LOG_FILE"
   exit "$status"
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
 
 command -v docker >/dev/null 2>&1 || { echo "docker is required" >&2; exit 1; }
 docker compose version >/dev/null
@@ -110,7 +110,7 @@ fi
 echo "Transit packet capture: PASS"
 
 echo "[5/6] Apply a controlled delay and verify the qdisc"
-RAMP_NETEM_DELAY=50ms compose up -d --force-recreate netem-router
+RAMP_NETEM_DELAY=50ms docker compose -f "$COMPOSE_FILE" up -d --force-recreate netem-router
 sleep 2
 if ! compose exec -T netem-router tc qdisc show | grep -q "netem.*delay 50ms"; then
   compose exec -T netem-router tc qdisc show >&2 || true
