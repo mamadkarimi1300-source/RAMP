@@ -12,6 +12,6 @@ WORKDIR /src/client
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ramp-client ./cmd/ramp-client
 
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates iproute2 && mkdir -p /var/lib/ramp
+RUN apk add --no-cache ca-certificates iproute2 curl && mkdir -p /var/lib/ramp
 COPY --from=build /out/ramp-client /usr/local/bin/ramp-client
 CMD ["/usr/local/bin/ramp-client"]
