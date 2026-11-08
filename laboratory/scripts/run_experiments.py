@@ -155,13 +155,29 @@ def main():
             for sid in selected:
                 sc = by_id[sid]
                 profile = base_env.copy()
-                profile.update({"RAMP_NETEM_DELAY": f"{sc['delay_ms']}ms",
-                    "RAMP_NETEM_JITTER": f"{sc['jitter_ms']}ms",
-                    "RAMP_NETEM_LOSS": f"{sc['loss_percent']}%",
-                    "RAMP_NETEM_RATE": "" if sc["rate_mbit"] is None else f"{sc['rate_mbit']}mbit"})
                 print(f"[3/4] Apply scenario {sid}", flush=True)
-                compose("up", "-d", "--force-recreate", "netem-router", env=profile)
-                time.sleep(2)
+                addr = compose("exec", "-T", "netem-router", "ip", "-o", "-4", "addr", "show", env=profile)
+                interfaces = []
+                for line in addr.stdout.splitlines():
+                    fields = line.split()
+                    if len(fields) > 3 and (fields[3].startswith("172.28.10.2/") or fields[3].startswith("172.28.20.2/")):
+                        interfaces.append(fields[1].split("@", 1)[0])
+                if len(set(interfaces)) != 2:
+                    raise RuntimeError(f"expected two router interfaces, found: {interfaces}")
+                for iface in sorted(set(interfaces)):
+                    compose("exec", "-T", "netem-router", "tc", "qdisc", "del", "dev", iface, "root",
+                            env=profile, check=False)
+                    tc = ["exec", "-T", "netem-router", "tc", "qdisc", "replace", "dev", iface, "root", "netem"]
+                    if sc["delay_ms"] > 0:
+                        tc += ["delay", f"{sc['delay_ms']}ms"]
+                        if sc["jitter_ms"] > 0:
+                            tc += [f"{sc['jitter_ms']}ms"]
+                    if sc["loss_percent"] > 0:
+                        tc += ["loss", f"{sc['loss_percent']}%"]
+                    if sc["rate_mbit"] is not None:
+                        tc += ["rate", f"{sc['rate_mbit']}mbit"]
+                    if len(tc) > 10:
+                        compose(*tc, env=profile)
                 q = compose("exec", "-T", "netem-router", "tc", "-s", "qdisc", "show", env=profile, check=False)
                 with (rawdir / "qdisc.txt").open("a", encoding="utf-8") as qf:
                     qf.write(f"\n### {sid}\n{q.stdout}\n{q.stderr}\n")
