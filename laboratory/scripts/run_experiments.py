@@ -49,6 +49,23 @@ def summarize(samples):
             "transfer_duration_ms_median": statistics.median(durations) if durations else None,
             "transfer_duration_ms_p95": percentile(durations, .95),
         })
+    by_key = {(row["scenario_id"], row["mode"]): row for row in rows}
+    for row in rows:
+        if row["mode"] == "ramp-fixed":
+            direct = by_key.get((row["scenario_id"], "direct"))
+            if direct:
+                base_goodput = direct["goodput_mbps_median"]
+                ramp_goodput = row["goodput_mbps_median"]
+                base_duration = direct["transfer_duration_ms_median"]
+                ramp_duration = row["transfer_duration_ms_median"]
+                row["goodput_change_vs_direct_percent"] = (
+                    (ramp_goodput / base_goodput - 1) * 100
+                    if base_goodput not in (None, 0) and ramp_goodput is not None else None
+                )
+                row["transfer_duration_change_vs_direct_percent"] = (
+                    (ramp_duration / base_duration - 1) * 100
+                    if base_duration not in (None, 0) and ramp_duration is not None else None
+                )
     return rows
 
 def make_report(manifest, rows):
@@ -61,12 +78,12 @@ def make_report(manifest, rows):
         f"- Payload bytes: {manifest['workload']['payload_bytes']}",
         f"- Repetitions: {manifest['repetitions']}", "",
         "> Results describe this Docker testbed and host only; they are not public-network performance claims.", "",
-        "| Scenario | Mode | Runs | Success | Goodput median Mbps | Goodput p95 Mbps | Transfer median ms | Transfer p95 ms |",
-        "|---|---|---:|---:|---:|---:|---:|---:|"
+        "| Scenario | Mode | Runs | Success | Goodput median Mbps | Goodput p95 Mbps | Transfer median ms | Transfer p95 ms | Goodput vs direct % | Duration vs direct % |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"
     ]
     for r in rows:
         f = lambda x: "n/a" if x is None else f"{x:.3f}"
-        lines.append(f"| {r['scenario_id']} | {r['mode']} | {r['runs']} | {r['successes']}/{r['runs']} | {f(r['goodput_mbps_median'])} | {f(r['goodput_mbps_p95'])} | {f(r['transfer_duration_ms_median'])} | {f(r['transfer_duration_ms_p95'])} |")
+        lines.append(f"| {r['scenario_id']} | {r['mode']} | {r['runs']} | {r['successes']}/{r['runs']} | {f(r['goodput_mbps_median'])} | {f(r['goodput_mbps_p95'])} | {f(r['transfer_duration_ms_median'])} | {f(r['transfer_duration_ms_p95'])} | {f(r.get('goodput_change_vs_direct_percent'))} | {f(r.get('transfer_duration_change_vs_direct_percent'))} |")
     lines += ["", "## Measurement definitions", "",
         "- Goodput = downloaded application bytes * 8 / curl transfer duration.",
         "- curl_time_connect_ms is the peer connection time reported by curl. In RAMP mode, the peer is the local SOCKS5 listener; it is not the RAMP TLS handshake duration.",
@@ -110,12 +127,22 @@ def main():
     git = run_command(["git", "rev-parse", "HEAD"], check=False)
     dv = run_command(["docker", "version", "--format", "{{.Server.Version}}"], env=base_env, check=False)
     cv = run_command(["docker", "compose", "version", "--short"], env=base_env, check=False)
+    memory_total = None
+    try:
+        for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
+            if line.startswith("MemTotal:"):
+                memory_total = int(line.split()[1]) * 1024
+                break
+    except (OSError, ValueError, IndexError):
+        pass
     modes = ["direct", "ramp-fixed"] if a.mode == "both" else [a.mode]
     manifest = {
         "experiment_id": exp_id, "scenario_ids": selected,
         "git_commit": git.stdout.strip() if git.returncode == 0 else "unknown",
         "started_at_utc": utc_now(),
-        "host_environment": {"os": platform.platform(), "python": platform.python_version(),
+        "host_environment": {"os": platform.platform(), "kernel": platform.release(),
+            "processor": platform.processor(), "cpu_count": os.cpu_count(),
+            "memory_total_bytes": memory_total, "python": platform.python_version(),
             "docker_server": dv.stdout.strip() if dv.returncode == 0 else "unavailable",
             "docker_compose": cv.stdout.strip() if cv.returncode == 0 else "unavailable"},
         "topology_revision": "docker-lab-v2", "mode": a.mode,
@@ -222,6 +249,13 @@ def main():
                             raw.write(json.dumps(sample, ensure_ascii=False)+"\n")
                             raw.flush()
                         print(f"  [{n}/{total}] {mode} rep={rep+1} success={ok} goodput_mbps={sample['goodput_mbps']}", flush=True)
+
+                q_after = compose("exec", "-T", "netem-router", "tc", "-s", "qdisc", "show",
+                                  env=profile, check=False)
+                with (rawdir / "qdisc.txt").open("a", encoding="utf-8") as qf:
+                    qf.write(f"\\n### {sid} after workload\\n{q_after.stdout}\\n{q_after.stderr}\\n")
+                if q_after.returncode:
+                    raise RuntimeError("post-workload qdisc inspection failed for " + sid)
 
                 ps = compose("ps", "-q", "ramp-client", "ramp-bridge", "netem-router", "destination",
                              env=profile, check=False)
