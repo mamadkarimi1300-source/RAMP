@@ -19,6 +19,24 @@ The client has a specific route to the bridge-side subnet through the router. Th
 - Go is not required on the host for container builds.
 - The subnets `172.28.10.0/24` and `172.28.20.0/24` must not conflict with existing VPN, LAN or Docker networks.
 
+## Automated build and smoke test
+
+From the repository root in WSL2, run:
+
+```sh
+sh laboratory/scripts/docker-smoke-test.sh
+```
+
+The script generates local-only certificates when needed, validates the Compose model, builds and starts all services, compares direct and SOCKS5 responses from the same client, captures a client-to-bridge packet on the transit router, and verifies that a configured NetEm delay is installed. It prints service logs on failure and removes the containers afterward.
+
+To leave the containers running after a successful test for interactive inspection:
+
+```sh
+RAMP_LAB_KEEP_RUNNING=1 sh laboratory/scripts/docker-smoke-test.sh
+```
+
+The same smoke test runs automatically in the `.github/workflows/docker-lab.yml` workflow on pushes and pull requests targeting `master`. A passing workflow validates the GitHub-hosted Linux Docker environment; it does not replace a separate validation on the developer's Docker Desktop/WSL2 host.
+
 ## Start the lab
 
 From the repository root in WSL2:
