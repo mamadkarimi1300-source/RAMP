@@ -31,7 +31,7 @@ The initial Docker topology uses two isolated subnets:
 - **Client zone:** `172.28.10.0/24`; client at `172.28.10.10`, router at `172.28.10.2`.
 - **Bridge zone:** `172.28.20.0/24`; router at `172.28.20.2`, bridge at `172.28.20.10`, destination at `172.28.20.11`.
 
-The client has a route for `172.28.20.0/24` via `172.28.10.2`. The bridge has a return route for `172.28.10.0/24` via `172.28.20.2`. The Docker network gateway addresses are not assigned to the router. These subnets must be checked for conflicts with existing VPN, LAN and Docker networks.
+The client has a route for `172.28.20.0/24` via `172.28.10.2`. The bridge and controlled destination each have a return route for `172.28.10.0/24` via `172.28.20.2`. This destination route is required for the direct-baseline response packets to traverse the same emulator rather than returning through Docker's default gateway. The Docker network gateway addresses are not assigned to the router. These subnets must be checked for conflicts with existing VPN, LAN and Docker networks.
 
 The destination is reachable from the bridge-side network so destination traffic is not accidentally shaped as if it were part of the client-to-bridge link.
 
@@ -40,7 +40,7 @@ The destination is reachable from the bridge-side network so destination traffic
 Before accepting any measurement:
 
 1. Confirm the client can reach the bridge only through the emulation router.
-2. Capture packets on both router interfaces and confirm the request and return traffic traverse them.
+2. Capture client-to-bridge packets and direct-destination return packets on the router; confirm both directions traverse the emulator.
 3. Apply a non-zero delay and verify that observed tunnel RTT changes.
 4. Remove the impairment and verify the baseline returns.
 5. Confirm the bridge can reach the destination independently.
