@@ -1,8 +1,8 @@
 services:
   netem-router:
     build:
-      context: .
-      dockerfile: netem/Dockerfile
+      context: ./netem
+      dockerfile: Dockerfile
     cap_add:
       - NET_ADMIN
     sysctls:
