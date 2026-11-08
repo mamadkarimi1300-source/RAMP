@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -26,7 +27,7 @@ func run() error {
 	token:=flag.String("token",os.Getenv("RAMP_TOKEN"),"shared access token; prefer RAMP_TOKEN environment variable")
 	dbPath:=flag.String("db",envOr("RAMP_SERVER_DB_PATH","data/server.db"),"SQLite event database path")
 	flag.Parse()
-	if *token=="" { returnErr := "missing token: set RAMP_TOKEN or pass -token"; return errors.New(returnErr) }
+	if *token=="" { return errors.New("missing token: set RAMP_TOKEN or pass -token") }
 
 	store,err:=sqlite.Open(*dbPath)
 	if err!=nil{return err}
