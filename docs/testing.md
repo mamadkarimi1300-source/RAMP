@@ -23,6 +23,21 @@ The storage tests cover SQLite schema creation on a fresh and existing database,
 6. Repeat with a wrong token and an untrusted CA; both connections must fail and the server/client event logs should record the relevant failure where the connection reaches that component.
 7. Confirm that `connection_closed` records contain non-zero directional byte counts for a data transfer.
 
+## Laboratory evaluation
+
+The laboratory design and initial scenario matrix live in [laboratory/README.md](../laboratory/README.md) and [laboratory/scenarios/matrix.yaml](../laboratory/scenarios/matrix.yaml). The Docker deployment plan is in [deployments/docker/README.md](../deployments/docker/README.md).
+
+A valid network-emulation run must prove that the client-to-bridge packets traverse the emulator in both directions. A shared Docker network with a `netem` command on an unrelated interface is not a valid experiment.
+
+For each scenario:
+
+1. Record the RAMP commit, host/runtime details, topology revision and applied impairment.
+2. Run direct baseline, RAMP fixed-path and (only after implemented) RAMP adaptive modes with the same destination and workload.
+3. Warm up, measure for the configured interval, and repeat the run.
+4. Preserve raw timestamped observations and the experiment manifest.
+5. Report median, mean, standard deviation and p95 where meaningful; include valid-run counts and exclusion reasons.
+6. Keep generated results local by default and publish only sanitized, reproducible reports.
+
 ## Network fault matrix
 
 | Condition | Expected behavior |
