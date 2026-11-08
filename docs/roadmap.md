@@ -14,6 +14,20 @@
 - [x] Ed25519 signed-configuration verification and tests.
 - [x] Server component health registry.
 - [x] CI test/vet workflow.
+- [x] Laboratory topology and separation-of-concerns specification.
+- [x] Initial network scenario matrix and experiment metadata/metric contract.
+
+## Laboratory implementation stages
+
+- [ ] Build and validate multi-stage Docker images for client and server without merging Go module boundaries.
+- [ ] Implement isolated client-side and bridge-side Docker networks with a transit emulator as the only client-to-bridge route.
+- [ ] Provision lab-only CA/certificate and token without committing secrets.
+- [ ] Add controlled HTTP/TCP destination and repeatable workload generator.
+- [ ] Apply and verify bidirectional delay, jitter, packet loss and bandwidth profiles on the real transit path.
+- [ ] Collect raw RTT, throughput/goodput, connect/handshake timing, CPU, memory and container/network counters.
+- [ ] Add experiment runner, manifests, repetitions and machine-readable result output.
+- [ ] Add report generation and baseline comparison.
+- [ ] Add failure-injection tests for bridge unavailability and recovery behavior.
 
 ## v0.2 target
 
@@ -45,4 +59,4 @@
 - User interface and administrative dashboard.
 - Scale, abuse-resistance and independent security review.
 
-A checkbox is marked complete only when code and tests are present. A design placeholder or interface alone is not a completed transport or recovery feature.
+A checkbox is marked complete only when code and tests are present. A design placeholder or interface alone is not a completed transport or recovery feature. Laboratory design documents do not mean that the Docker testbed or its measurements are already operational.
