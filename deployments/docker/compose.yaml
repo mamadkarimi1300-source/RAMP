@@ -14,9 +14,9 @@ services:
       RAMP_NETEM_RATE: ${RAMP_NETEM_RATE:-}
     networks:
       client-zone:
-        ipv4_address: 172.28.10.1
+        ipv4_address: 172.28.10.2
       bridge-zone:
-        ipv4_address: 172.28.20.1
+        ipv4_address: 172.28.20.2
     restart: unless-stopped
 
   ramp-client:
@@ -31,10 +31,10 @@ services:
       RAMP_TOKEN: ${RAMP_TOKEN:?Set RAMP_TOKEN before starting the lab}
       RAMP_CLIENT_DB_PATH: /var/lib/ramp/client.db
     command:
-      - sh
+      - /bin/sh
       - -ec
       - |
-        ip route replace 172.28.20.0/24 via 172.28.10.1
+        ip route replace 172.28.20.0/24 via 172.28.10.2
         exec /usr/local/bin/ramp-client \
           -listen 0.0.0.0:1080 \
           -server 172.28.20.10:8443 \
@@ -57,14 +57,16 @@ services:
     depends_on:
       - netem-router
       - destination
+    cap_add:
+      - NET_ADMIN
     environment:
       RAMP_TOKEN: ${RAMP_TOKEN:?Set RAMP_TOKEN before starting the lab}
       RAMP_SERVER_DB_PATH: /var/lib/ramp/server.db
     command:
-      - sh
+      - /bin/sh
       - -ec
       - |
-        ip route replace 172.28.10.0/24 via 172.28.20.1
+        ip route replace 172.28.10.0/24 via 172.28.20.2
         exec /usr/local/bin/ramp-server \
           -listen :8443 \
           -cert /certs/server.crt \
