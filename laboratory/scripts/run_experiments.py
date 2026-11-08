@@ -48,6 +48,9 @@ def summarize(samples):
         good = [x for x in items if x["success"]]
         rates = [x["goodput_mbps"] for x in good]
         durations = [x["transfer_duration_ms"] for x in good]
+        rtts = [x["bridge_rtt_avg_ms"] for x in items if x["bridge_rtt_avg_ms"] is not None]
+        losses = [x["bridge_icmp_loss_percent"] for x in items if x["bridge_icmp_loss_percent"] is not None]
+        handshakes = [x["bridge_tls_handshake_ms"] for x in items if x["bridge_tls_handshake_ms"] is not None]
         rows.append({
             "scenario_id": scenario, "mode": mode, "runs": len(items),
             "successes": len(good), "failures": len(items)-len(good),
@@ -59,6 +62,9 @@ def summarize(samples):
             "transfer_duration_ms_mean": statistics.mean(durations) if durations else None,
             "transfer_duration_ms_median": statistics.median(durations) if durations else None,
             "transfer_duration_ms_p95": percentile(durations, .95),
+            "bridge_rtt_avg_ms_median": statistics.median(rtts) if rtts else None,
+            "bridge_icmp_loss_percent_median": statistics.median(losses) if losses else None,
+            "bridge_tls_handshake_ms_median": statistics.median(handshakes) if handshakes else None,
         })
     by_key = {(row["scenario_id"], row["mode"]): row for row in rows}
     for row in rows:
@@ -89,15 +95,17 @@ def make_report(manifest, rows):
         f"- Payload bytes: {manifest['workload']['payload_bytes']}",
         f"- Repetitions: {manifest['repetitions']}", "",
         "> Results describe this Docker testbed and host only; they are not public-network performance claims.", "",
-        "| Scenario | Mode | Runs | Success | Goodput median Mbps | Goodput p95 Mbps | Transfer median ms | Transfer p95 ms | Goodput vs direct % | Duration vs direct % |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"
+        "| Scenario | Mode | Runs | Success | RTT avg ms | TLS handshake ms | Goodput median Mbps | Goodput p95 Mbps | Transfer median ms | Goodput vs direct % | Duration vs direct % |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
     ]
     for r in rows:
         f = lambda x: "n/a" if x is None else f"{x:.3f}"
-        lines.append(f"| {r['scenario_id']} | {r['mode']} | {r['runs']} | {r['successes']}/{r['runs']} | {f(r['goodput_mbps_median'])} | {f(r['goodput_mbps_p95'])} | {f(r['transfer_duration_ms_median'])} | {f(r['transfer_duration_ms_p95'])} | {f(r.get('goodput_change_vs_direct_percent'))} | {f(r.get('transfer_duration_change_vs_direct_percent'))} |")
+        lines.append(f"| {r['scenario_id']} | {r['mode']} | {r['runs']} | {r['successes']}/{r['runs']} | {f(r['bridge_rtt_avg_ms_median'])} | {f(r['bridge_tls_handshake_ms_median'])} | {f(r['goodput_mbps_median'])} | {f(r['goodput_mbps_p95'])} | {f(r['transfer_duration_ms_median'])} | {f(r.get('goodput_change_vs_direct_percent'))} | {f(r.get('transfer_duration_change_vs_direct_percent'))} |")
     lines += ["", "## Measurement definitions", "",
         "- Goodput = downloaded application bytes * 8 / curl transfer duration.",
-        "- curl_time_connect_ms is the peer connection time reported by curl. In RAMP mode, the peer is the local SOCKS5 listener; it is not the RAMP TLS handshake duration.",
+        "- Bridge RTT is measured with ICMP echo from the client container to the bridge IP through the transit router; packet loss and mdev are retained in raw probe output.",
+        "- Bridge TLS handshake is curl time_appconnect from a certificate-verified TLS probe. It excludes the RAMP application OPEN handshake.",
+        "- curl_time_connect_ms in the workload remains the peer connection time; in RAMP mode, that peer is the local SOCKS5 listener.",
         "- NetEm shaping is applied on both router egress interfaces. The configured delay is not the total RTT.",
         "- Failed runs are retained in raw samples and included in the success-rate denominator.", ""]
     return "\n".join(lines)
