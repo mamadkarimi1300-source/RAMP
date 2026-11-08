@@ -11,4 +11,6 @@ export RAMP_TOKEN='replace-with-a-long-random-secret'
 go run ./cmd/ramp-server -listen :8443 -cert ./server.crt -key ./server.key
 ```
 
+The bridge creates `data/server.db` by default. Override the path with `RAMP_SERVER_DB_PATH` or `-db`. The database records accepted sessions, TLS/protocol failures, token rejection, egress connection results, dial latency and directional byte counts. The database is local to this server instance.
+
 Do not expose this service without firewall policy, rate limits and operational monitoring. The current server is a single-bridge TCP egress baseline; it is not yet a distributed bridge registry or production deployment.
