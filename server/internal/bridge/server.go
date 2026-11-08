@@ -114,10 +114,11 @@ func (s *Server) handle(parent context.Context, raw net.Conn) {
 
 // pipe returns tunnel-to-destination bytes first and destination-to-tunnel bytes second.
 func pipe(a,b net.Conn) (int64,int64) {
-	type result struct { count int64 }
+	type result struct { direction int; count int64 }
 	done:=make(chan result,2)
-	go func(){ n,_:=io.Copy(b,a); _=b.Close(); done<-result{count:n} }()
-	go func(){ n,_:=io.Copy(a,b); _=a.Close(); done<-result{count:n} }()
-	first,second:=<-done,<-done
-	return first.count,second.count
+	go func(){ n,_:=io.Copy(b,a); _=b.Close(); done<-result{direction:0,count:n} }()
+	go func(){ n,_:=io.Copy(a,b); _=a.Close(); done<-result{direction:1,count:n} }()
+	var sent,received int64
+	for i:=0;i<2;i++ { r:=<-done; if r.direction==0 { sent=r.count } else { received=r.count } }
+	return sent,received
 }
