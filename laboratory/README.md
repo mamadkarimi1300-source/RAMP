@@ -43,7 +43,7 @@ The client and bridge are on separate Docker networks. Specific routes send clie
 - GitHub Actions Docker integration workflow: **passed** on GitHub-hosted Ubuntu at commit `2cbcc003af44b30f39833040cc58fac6ff55475d`; image builds, direct/SOCKS5 traffic, forward and return packet captures, NetEm qdisc installation and a two-scenario experiment all succeeded. Local Docker Desktop/WSL2 validation is still pending.
 - Controlled HTTP workload destination with configurable payload size: implemented.
 - Machine-readable scenario matrix in `scenarios/matrix.json`: implemented alongside the human-readable YAML matrix.
-- Standard-library experiment runner with direct/RAMP modes, repetitions, warm-ups, raw JSONL, manifests, ICMP RTT/packet-loss probes, certificate-verified bridge TLS handshake probes, qdisc/container snapshots and statistical report: implemented.
+- Standard-library experiment runner with direct/RAMP modes, repetitions, warm-ups, raw JSONL, manifests, ICMP RTT/packet-loss probes, certificate-verified bridge TLS handshake probes (TCP connect time subtracted; application OPEN handshake excluded), qdisc/container snapshots and statistical report: implemented.
 - Python unit tests and CI integration for runner/statistics: added; first CI result remains pending.
 
 See:
