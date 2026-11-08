@@ -10,7 +10,7 @@ This directory contains the first local Docker testbed implementation. It builds
 - `netem-router`: dual-homed Linux router at `172.28.10.2` and `172.28.20.2`; it is the intended transit path between client and bridge.
 - Client and bridge each have a separate persistent SQLite volume.
 
-The client has a specific route to the bridge-side subnet through the router. The bridge has a return route to the client-side subnet through the same router. The destination is reachable from the bridge-side network. The client container includes curl so direct and proxied requests can originate from the same workload environment.
+The client has a specific route to the bridge-side subnet through the router. The bridge and the controlled destination each have a return route to the client-side subnet through the same router. The destination return route is essential: without it, direct-baseline replies could bypass the emulator and invalidate the comparison. The client container includes curl so direct and proxied requests can originate from the same workload environment.
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ From the repository root in WSL2, run:
 sh laboratory/scripts/docker-smoke-test.sh
 ```
 
-The script generates local-only certificates when needed, validates the Compose model, builds and starts all services, compares direct and SOCKS5 responses from the same client, captures a client-to-bridge packet on the transit router, and verifies that a configured NetEm delay is installed. It prints service logs on failure and removes the containers afterward.
+The script generates local-only certificates when needed, validates the Compose model, builds and starts all services, compares direct and SOCKS5 responses from the same client, captures client-to-bridge and destination-to-client packets on the transit router, and verifies that a configured NetEm delay is installed. It prints service logs on failure and removes the containers afterward.
 
 To leave the containers running after a successful test for interactive inspection:
 
@@ -90,7 +90,7 @@ python laboratory/scripts/run_experiments.py --scenario baseline --scenario late
 
 Run all profiles from `laboratory/scenarios/matrix.json` by omitting `--scenario`. Use `--mode direct` or `--mode ramp-fixed` for a single path, or the default `--mode both` for a direct-versus-RAMP comparison. Results are written under `laboratory/results/<date>/<experiment-id>/` and are ignored by Git.
 
-The report includes goodput, transfer duration, success rate, mean, median, standard deviation and p95. Curl's connect time in RAMP mode measures the local SOCKS5 peer, not the internal TLS handshake; it must not be reported as TLS handshake duration. CPU/memory snapshots and `tc -s qdisc` output are retained as raw supporting observations.
+The report includes goodput, transfer duration, success rate, mean, median, standard deviation, p95 and relative goodput/transfer-duration changes for RAMP versus the direct baseline. Curl's connect time in RAMP mode measures the local SOCKS5 peer, not the internal TLS handshake; it must not be reported as TLS handshake duration. CPU/memory snapshots and `tc -s qdisc` output are retained as raw supporting observations.
 
 ## Apply a network condition
 
