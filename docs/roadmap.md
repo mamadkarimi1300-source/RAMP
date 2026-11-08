@@ -27,9 +27,11 @@
 - [x] Add a machine-readable scenario matrix and standard-library experiment runner with repetitions, warm-ups and raw JSONL samples.
 - [x] Add initial goodput/transfer timing, qdisc counters, container CPU/memory snapshots and statistical Markdown/JSON reports.
 - [x] Add Python unit tests and CI workflow integration for the laboratory runner.
-- [ ] Build both images and validate Compose configuration on Docker Desktop / WSL2.
-- [ ] Prove forward and return traffic traverse the emulator; confirm no bypass route exists.
-- [ ] Verify each impairment profile against independent measurements.
+- [x] Build all images and validate Compose configuration in GitHub Actions on Ubuntu.
+- [x] Capture client-to-bridge and destination-to-client packets on the transit router in CI.
+- [x] Smoke-test direct and SOCKS5 paths and verify NetEm qdisc installation.
+- [ ] Repeat validation on local Docker Desktop / WSL2.
+- [ ] Verify each impairment profile's effect using independent RTT measurements.
 - [ ] Add explicit RTT probes, true RAMP TLS handshake timing, active-session counts and recovery-duration instrumentation.
 - [ ] Add statistical direct-baseline deltas and confidence intervals to the report.
 - [ ] Validate all impairment profiles against independent measurements and prove no route bypass.
