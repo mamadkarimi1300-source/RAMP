@@ -1,0 +1,95 @@
+version: 1
+description: >
+  Initial reproducible network test matrix. Values are target profiles, not
+  measured results. Apply impairments only to the client-to-bridge transit path.
+
+defaults:
+  repetitions: 5
+  warmup_seconds: 10
+  measurement_seconds: 60
+  cooldown_seconds: 10
+  workload:
+    protocol: http
+    concurrency: 1
+    payload_bytes: 10485760
+  record:
+    - experiment_id
+    - scenario_id
+    - git_commit
+    - started_at_utc
+    - host_environment
+    - topology_revision
+    - applied_network_profile
+    - workload_parameters
+    - raw_samples
+
+scenarios:
+  - id: baseline
+    description: No intentional network impairment.
+    impairment:
+      delay_ms: 0
+      jitter_ms: 0
+      loss_percent: 0
+      rate_mbit: null
+
+  - id: latency-100ms
+    description: Fixed additional one-way delay in the emulated link.
+    impairment:
+      delay_ms: 100
+      jitter_ms: 0
+      loss_percent: 0
+      rate_mbit: null
+
+  - id: latency-200ms
+    description: Higher fixed additional one-way delay.
+    impairment:
+      delay_ms: 200
+      jitter_ms: 0
+      loss_percent: 0
+      rate_mbit: null
+
+  - id: jitter-30ms
+    description: Delay variation around the configured delay.
+    impairment:
+      delay_ms: 50
+      jitter_ms: 30
+      loss_percent: 0
+      rate_mbit: null
+
+  - id: loss-1pct
+    description: Random packet loss.
+    impairment:
+      delay_ms: 20
+      jitter_ms: 0
+      loss_percent: 1
+      rate_mbit: null
+
+  - id: loss-3pct
+    description: Elevated random packet loss.
+    impairment:
+      delay_ms: 20
+      jitter_ms: 0
+      loss_percent: 3
+      rate_mbit: null
+
+  - id: bandwidth-5mbit
+    description: Rate-limited client-to-bridge link.
+    impairment:
+      delay_ms: 20
+      jitter_ms: 0
+      loss_percent: 0
+      rate_mbit: 5
+
+  - id: combined-degraded
+    description: Combined delay, jitter, loss and bandwidth constraint.
+    impairment:
+      delay_ms: 100
+      jitter_ms: 20
+      loss_percent: 1
+      rate_mbit: 5
+
+  - id: bridge-unavailable
+    description: Bridge process is stopped during a controlled test.
+    impairment:
+      action: stop_bridge
+      duration_seconds: 15
