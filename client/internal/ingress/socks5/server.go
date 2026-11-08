@@ -124,12 +124,13 @@ func writeReply(w io.Writer, code byte) error {
 
 // pipe returns client-to-remote bytes first and remote-to-client bytes second.
 func pipe(a,b net.Conn) (int64,int64) {
-	type result struct { count int64 }
+	type result struct { direction int; count int64 }
 	done:=make(chan result,2)
-	go func(){ n,_:=io.Copy(b,a); _=b.Close(); done<-result{count:n} }()
-	go func(){ n,_:=io.Copy(a,b); _=a.Close(); done<-result{count:n} }()
-	first,second:=<-done,<-done
-	return first.count,second.count
+	go func(){ n,_:=io.Copy(b,a); _=b.Close(); done<-result{direction:0,count:n} }()
+	go func(){ n,_:=io.Copy(a,b); _=a.Close(); done<-result{direction:1,count:n} }()
+	var sent,received int64
+	for i:=0;i<2;i++ { r:=<-done; if r.direction==0 { sent=r.count } else { received=r.count } }
+	return sent,received
 }
 
 func ParseAddress(host string, port uint16) string { return net.JoinHostPort(host,strconv.Itoa(int(port))) }
