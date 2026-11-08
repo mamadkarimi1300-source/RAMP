@@ -83,6 +83,7 @@ services:
     image: nginx:1.27-alpine
     networks:
       bridge-zone:
+        ipv4_address: 172.28.20.11
         aliases:
           - lab-destination
     restart: unless-stopped
