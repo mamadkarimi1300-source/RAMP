@@ -13,6 +13,6 @@ WORKDIR /src/server
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ramp-server ./cmd/ramp-server
 
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates iproute2
+RUN apk add --no-cache ca-certificates iproute2 && mkdir -p /var/lib/ramp
 COPY --from=build /out/ramp-server /usr/local/bin/ramp-server
-ENTRYPOINT ["/usr/local/bin/ramp-server"]
+CMD ["/usr/local/bin/ramp-server"]
