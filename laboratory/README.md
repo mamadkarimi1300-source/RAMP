@@ -39,7 +39,9 @@ The client and bridge are on separate Docker networks. Specific routes send clie
 
 - Laboratory architecture, topology specification, scenario matrix and experiment contract: added.
 - Dockerfiles, Compose topology, local certificate helper and Linux traffic-emulation router: added as an initial implementation scaffold.
-- Docker build, Compose startup, route isolation, packet-path proof and real benchmark execution: **not yet validated in a running environment**.
+- Repeatable Docker smoke-test script: added; checks Compose validation, image builds, direct and SOCKS5 requests, transit-router packet capture and NetEm qdisc installation.
+- GitHub Actions Docker integration workflow: added; its first run and local Docker Desktop/WSL2 execution must pass before the testbed is considered runtime-validated.
+- Real benchmark execution and measurement/report pipeline: **not yet implemented or validated**.
 - Metric collector, experiment runner and report generator: not yet implemented.
 
 See:
