@@ -23,27 +23,28 @@ The laboratory is an additive evaluation layer around the existing RAMP client, 
 | `laboratory/experiments/` | Run definitions, IDs, repetitions and raw result contracts |
 | `laboratory/monitoring/` | Host/container/network metric collection |
 | `laboratory/reports/` | Analysis outputs and report templates |
-| `deployments/docker/` | Local reproducible deployment instructions |
+| `deployments/docker/` | Local reproducible deployment, images and topology |
 
 ## Initial topology
 
-The first target is a three-role topology:
+The first Docker topology has three functional roles and an explicit transit router:
 
-1. **Client** — runs the existing SOCKS5 client and produces application traffic.
-2. **Bridge** — runs the existing TLS bridge and connects to the destination.
-3. **Destination** — a controlled HTTP/TCP endpoint whose response size and behavior are known.
+1. **Client** — existing SOCKS5 client and curl workload on `172.28.10.10`.
+2. **Network Emulator** — router at `172.28.10.2` and `172.28.20.2`, shaping both egress directions.
+3. **Bridge and Destination** — RAMP bridge at `172.28.20.10` and controlled HTTP destination at `172.28.20.11`.
 
-A network-emulation hop is placed between Client and Bridge. The emulator must be on the actual packet path; applying `tc netem` to an unrelated interface does not constitute a valid experiment.
-
-Monitoring observes all roles and the emulation hop. RAMP's own SQLite event databases remain process-local; laboratory run metadata and raw measurement samples are separate concerns.
+The client and bridge are on separate Docker networks. Specific routes send client-to-bridge traffic and its return path through the emulator. The destination remains on the bridge-side network.
 
 ## Current implementation status
 
-This directory establishes the lab specification and experiment contracts. It is not yet a runnable Compose testbed. Container routing, certificate provisioning, traffic shaping, metric exporters and end-to-end orchestration must be implemented and validated in the next phase.
+- Laboratory architecture, topology specification, scenario matrix and experiment contract: added.
+- Dockerfiles, Compose topology, local certificate helper and Linux traffic-emulation router: added as an initial implementation scaffold.
+- Docker build, Compose startup, route isolation, packet-path proof and real benchmark execution: **not yet validated in a running environment**.
+- Metric collector, experiment runner and report generator: not yet implemented.
 
 See:
 
 - [Topology](topology.md)
 - [Scenario matrix](scenarios/matrix.yaml)
 - [Experiment contract](experiments/README.md)
-- [Docker deployment plan](../deployments/docker/README.md)
+- [Docker deployment](../deployments/docker/README.md)
