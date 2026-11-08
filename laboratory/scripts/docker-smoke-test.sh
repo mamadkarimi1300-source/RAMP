@@ -63,7 +63,7 @@ if [ "$ready" -ne 1 ]; then
   exit 1
 fi
 
-direct="$(compose exec -T ramp-client curl --fail --silent --show-error --max-time 10 http://172.28.20.11/)"
+direct="$(compose exec -T ramp-client curl --fail --silent --show-error --max-time 10 http://172.28.20.11:8080/health)"
 if [ -z "$direct" ]; then
   echo "Direct baseline returned an empty response" >&2
   exit 1
@@ -94,7 +94,7 @@ echo "[4/6] Verify client-to-bridge packets cross the transit router"
 compose exec -T netem-router sh -c "timeout 15 tcpdump -ni any -c 1 'src host 172.28.10.10 and dst host 172.28.20.10'" >"$LOG_FILE" 2>&1 &
 CAPTURE_PID=$!
 sleep 1
-compose exec -T ramp-client curl --fail --silent --show-error --max-time 10 --socks5-hostname 127.0.0.1:1080 http://lab-destination/ >/dev/null
+compose exec -T ramp-client curl --fail --silent --show-error --max-time 10 --socks5-hostname 127.0.0.1:1080 http://lab-destination:8080/health >/dev/null
 if ! wait "$CAPTURE_PID"; then
   CAPTURE_PID=""
   cat "$LOG_FILE" >&2
