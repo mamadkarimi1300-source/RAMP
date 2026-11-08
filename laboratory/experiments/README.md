@@ -14,22 +14,34 @@ Every run must be independently identifiable and reproducible. A result without 
 - Mode: `direct`, `ramp-fixed` or `ramp-adaptive`.
 - Repetition index and warm-up/measurement windows.
 
+## Current runner
+
+The current implementation is `laboratory/scripts/run_experiments.py` and uses only the Python standard library. The machine-readable source of profiles is `laboratory/scenarios/matrix.json`; `matrix.yaml` remains the human-readable planning document. The runner builds/starts the Compose testbed, validates the controlled destination and SOCKS5 route, applies each profile to both router egress interfaces, alternates direct/RAMP order between repetitions, and writes local results.
+
+Example from the repository root:
+
+```sh
+python laboratory/scripts/run_experiments.py --scenario baseline --scenario latency-100ms --repetitions 3 --warmup 1 --payload-bytes 10485760
+```
+
+Use `--mode direct` or `--mode ramp-fixed` to run one mode; the default `both` compares both. `--keep-running` leaves the containers up. Results are written to `laboratory/results/<date>/<experiment-id>/` and are excluded from Git.
+
 ## Raw observations
 
 Store timestamped samples where available. Preserve raw observations; do not keep only averages.
 
 | Metric | Unit | Source / method |
 |---|---|---|
-| RTT | ms | Explicit probe with documented endpoints |
+| RTT | ms | Not yet collected by the current runner; requires a separate documented probe |
 | Throughput | bit/s | Bytes transferred divided by measured interval |
 | Goodput | bit/s | Application payload bytes divided by interval |
 | Packet loss | percent | Emulator counters or packet-level observation |
 | Jitter | ms | Variation of explicitly defined RTT/one-way samples |
 | Connect duration | ms | Client-side monotonic timer |
-| TLS handshake duration | ms | Client-side monotonic timer around handshake |
+| TLS handshake duration | ms | Not currently instrumented; do not infer it from curl connect time |
 | Transfer duration | ms | Workload timer |
 | Success / failure | count and ratio | Workload result |
-| CPU / memory | percent / bytes | Container or host metrics |
+| CPU / memory | percent / bytes | Container snapshots via Docker stats (coarse, after each scenario) |
 | Active sessions | count | RAMP runtime instrumentation or process metrics |
 | Recovery duration | ms | Time from injected fault to the defined recovery condition |
 
@@ -62,7 +74,7 @@ Keep repetitions and workload constant across modes. Randomize or rotate executi
 
 ## Output layout
 
-The planned output layout is:
+The runner currently writes this output layout:
 
 ```text
 laboratory/results/
