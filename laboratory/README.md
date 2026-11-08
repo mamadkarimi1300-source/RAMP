@@ -41,12 +41,16 @@ The client and bridge are on separate Docker networks. Specific routes send clie
 - Dockerfiles, Compose topology, local certificate helper and Linux traffic-emulation router: added as an initial implementation scaffold.
 - Repeatable Docker smoke-test script: added; checks Compose validation, image builds, direct and SOCKS5 requests, transit-router packet capture and NetEm qdisc installation.
 - GitHub Actions Docker integration workflow: added; its first run and local Docker Desktop/WSL2 execution must pass before the testbed is considered runtime-validated.
-- Real benchmark execution and measurement/report pipeline: **not yet implemented or validated**.
-- Metric collector, experiment runner and report generator: not yet implemented.
+- Controlled HTTP workload destination with configurable payload size: implemented.
+- Machine-readable scenario matrix in `scenarios/matrix.json`: implemented alongside the human-readable YAML matrix.
+- Standard-library experiment runner with direct/RAMP modes, repetitions, warm-ups, raw JSONL, manifests, qdisc/container snapshots and statistical report: implemented; runtime execution remains pending.
+- Python unit tests and CI integration for runner/statistics: added; first CI result remains pending.
 
 See:
 
 - [Topology](topology.md)
-- [Scenario matrix](scenarios/matrix.yaml)
+- [Scenario matrix (human-readable)](scenarios/matrix.yaml)
+- [Scenario matrix (machine-readable)](scenarios/matrix.json)
+- [Experiment runner](scripts/run_experiments.py)
 - [Experiment contract](experiments/README.md)
 - [Docker deployment](../deployments/docker/README.md)
