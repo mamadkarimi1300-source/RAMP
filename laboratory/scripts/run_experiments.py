@@ -22,6 +22,18 @@ def compose(*args, env=None, timeout=180, check=True):
     return run_command(["docker", "compose", "-f", str(COMPOSE_FILE), *args],
                        env=env, timeout=timeout, check=check)
 
+def parse_tls_probe(output):
+    parts = output.strip().split(",", 1)
+    if len(parts) != 2:
+        return {"tcp_connect_ms": None, "tls_handshake_ms": None}
+    try:
+        tcp_connect = float(parts[0]) * 1000
+        appconnect = float(parts[1]) * 1000
+    except ValueError:
+        return {"tcp_connect_ms": None, "tls_handshake_ms": None}
+    return {"tcp_connect_ms": tcp_connect,
+            "tls_handshake_ms": max(0.0, appconnect - tcp_connect)}
+
 def parse_ping_output(output):
     result = {"min_ms": None, "avg_ms": None, "max_ms": None, "mdev_ms": None, "loss_percent": None}
     loss = re.search(r"([0-9.]+)% packet loss", output)
@@ -240,16 +252,13 @@ def main():
                     tls_probe = compose("exec", "-T", "ramp-client", "curl", "--silent", "--show-error",
                         "--output", "/dev/null", "--connect-timeout", "3", "--max-time", "5",
                         "--cacert", "/certs/ca.crt", "--resolve", "ramp-bridge:8443:172.28.20.10",
-                        "--write-out", "%{time_appconnect}", "https://ramp-bridge:8443/",
-                        env=profile, check=False, timeout=10)
-                    tls_outputs.append({"exit_code": tls_probe.returncode, "stdout": tls_probe.stdout.strip(),
-                                        "stderr": tls_probe.stderr.strip()})
-                    try:
-                        value = float(tls_probe.stdout.strip())
-                        if value > 0:
-                            tls_samples.append(value * 1000)
-                    except ValueError:
-                        pass
+                        "--http0.9", "--write-out", "%{time_connect},%{time_appconnect}",
+                        "https://ramp-bridge:8443/", env=profile, check=False, timeout=10)
+                    timing = parse_tls_probe(tls_probe.stdout)
+                    tls_outputs.append({"exit_code": tls_probe.returncode, **timing,
+                                        "stdout": tls_probe.stdout.strip(), "stderr": tls_probe.stderr.strip()})
+                    if timing["tls_handshake_ms"] is not None and timing["tls_handshake_ms"] > 0:
+                        tls_samples.append(timing["tls_handshake_ms"])
                 tls_handshake_ms = statistics.median(tls_samples) if tls_samples else None
                 with (rawdir / "network-probes.jsonl").open("a", encoding="utf-8") as probe_file:
                     probe_file.write(json.dumps({"scenario_id": sid, "timestamp_utc": utc_now(),
@@ -295,7 +304,7 @@ def main():
                             "bridge_rtt_max_ms": ping_metrics["max_ms"],
                             "bridge_rtt_mdev_ms": ping_metrics["mdev_ms"],
                             "bridge_icmp_loss_percent": ping_metrics["loss_percent"],
-                            "bridge_tls_handshake_ms": tls_handshake_ms,
+                            "bridge_tls_handshake_ms": tls_handshake_ms if mode == "ramp-fixed" else None,
                             "error": res.stderr.strip() if not ok else None}
                         if not warmup:
                             samples.append(sample)
