@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repeatable direct-vs-RAMP workload runner; Python standard library only."""
 from __future__ import annotations
-import argparse, datetime as dt, json, math, os, platform, shutil, statistics, subprocess, sys, time, uuid
+import argparse, datetime as dt, json, math, os, platform, re, shutil, statistics, subprocess, sys, time, uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,17 @@ def run_command(args, *, env=None, timeout=180, check=True):
 def compose(*args, env=None, timeout=180, check=True):
     return run_command(["docker", "compose", "-f", str(COMPOSE_FILE), *args],
                        env=env, timeout=timeout, check=check)
+
+def parse_ping_output(output):
+    result = {"min_ms": None, "avg_ms": None, "max_ms": None, "mdev_ms": None, "loss_percent": None}
+    loss = re.search(r"([0-9.]+)% packet loss", output)
+    rtt = re.search(r"(?:rtt|round-trip) min/avg/max/(?:mdev|stddev) = ([0-9.]+)/([0-9.]+)/([0-9.]+)/([0-9.]+)", output)
+    if loss:
+        result["loss_percent"] = float(loss.group(1))
+    if rtt:
+        result.update({"min_ms": float(rtt.group(1)), "avg_ms": float(rtt.group(2)),
+                       "max_ms": float(rtt.group(3)), "mdev_ms": float(rtt.group(4))})
+    return result
 
 def percentile(values, p):
     if not values: return None
@@ -150,7 +161,9 @@ def main():
         "workload": {"destination": "lab-destination:8080", "protocol": "HTTP/1.1", "payload_bytes": payload},
         "network_profiles": [by_id[x] for x in selected],
         "metric_definitions": {"goodput_mbps": "downloaded application bytes * 8 / curl time_total / 1e6",
-            "curl_time_connect_ms": "curl connection time to direct destination or local SOCKS5 peer; not TLS handshake"},
+            "curl_time_connect_ms": "curl connection time to direct destination or local SOCKS5 peer",
+        "bridge_rtt_ms": "ICMP echo RTT from ramp-client to 172.28.20.10 through the transit router",
+        "bridge_tls_handshake_ms": "curl time_appconnect for a verified TLS handshake to the bridge; excludes RAMP application OPEN handshake"},
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2)+"\n", encoding="utf-8")
     samples = []
@@ -210,6 +223,32 @@ def main():
                     qf.write(f"\n### {sid}\n{q.stdout}\n{q.stderr}\n")
                 if q.returncode: raise RuntimeError("tc qdisc inspection failed for " + sid)
 
+                ping = compose("exec", "-T", "ramp-client", "ping", "-n", "-c", "5", "-W", "2", "-i", "0.2",
+                               "172.28.20.10", env=profile, check=False, timeout=20)
+                ping_metrics = parse_ping_output(ping.stdout + "\n" + ping.stderr)
+                tls_samples = []
+                tls_outputs = []
+                for _ in range(3):
+                    tls_probe = compose("exec", "-T", "ramp-client", "curl", "--silent", "--show-error",
+                        "--output", "/dev/null", "--connect-timeout", "3", "--max-time", "5",
+                        "--cacert", "/certs/ca.crt", "--resolve", "ramp-bridge:8443:172.28.20.10",
+                        "--write-out", "%{time_appconnect}", "https://ramp-bridge:8443/",
+                        env=profile, check=False, timeout=10)
+                    tls_outputs.append({"exit_code": tls_probe.returncode, "stdout": tls_probe.stdout.strip(),
+                                        "stderr": tls_probe.stderr.strip()})
+                    try:
+                        value = float(tls_probe.stdout.strip())
+                        if value > 0:
+                            tls_samples.append(value * 1000)
+                    except ValueError:
+                        pass
+                tls_handshake_ms = statistics.median(tls_samples) if tls_samples else None
+                with (rawdir / "network-probes.jsonl").open("a", encoding="utf-8") as probe_file:
+                    probe_file.write(json.dumps({"scenario_id": sid, "timestamp_utc": utc_now(),
+                        "ping": ping_metrics, "ping_exit_code": ping.returncode,
+                        "ping_stdout": ping.stdout, "tls_handshake_ms": tls_handshake_ms,
+                        "tls_probe_attempts": tls_outputs}, ensure_ascii=False) + "\n")
+
                 for rep in range(warmups+reps):
                     ordered = modes if rep % 2 == 0 else list(reversed(modes))
                     for mode in ordered:
@@ -243,6 +282,12 @@ def main():
                             "time_to_first_byte_ms": float(values.get("time_starttransfer",0) or 0)*1000 if values else None,
                             "curl_speed_bytes_per_second": float(values.get("speed_download",0) or 0) if values else None,
                             "goodput_mbps": got*8/secs/1e6 if ok and secs>0 else None,
+                            "bridge_rtt_min_ms": ping_metrics["min_ms"],
+                            "bridge_rtt_avg_ms": ping_metrics["avg_ms"],
+                            "bridge_rtt_max_ms": ping_metrics["max_ms"],
+                            "bridge_rtt_mdev_ms": ping_metrics["mdev_ms"],
+                            "bridge_icmp_loss_percent": ping_metrics["loss_percent"],
+                            "bridge_tls_handshake_ms": tls_handshake_ms,
                             "error": res.stderr.strip() if not ok else None}
                         if not warmup:
                             samples.append(sample)
