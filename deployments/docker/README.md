@@ -6,7 +6,7 @@ This directory contains the first local Docker testbed implementation. It builds
 
 - `ramp-client`: built from the existing `client` Go module.
 - `ramp-bridge`: built from the existing `server` Go module.
-- `destination`: controlled Nginx HTTP endpoint at `172.28.20.11` on the bridge-side network.
+- `destination`: controlled Python HTTP workload endpoint at `172.28.20.11:8080` on the bridge-side network.
 - `netem-router`: dual-homed Linux router at `172.28.10.2` and `172.28.20.2`; it is the intended transit path between client and bridge.
 - Client and bridge each have a separate persistent SQLite volume.
 
@@ -70,13 +70,27 @@ From the repository root in WSL2:
 
    ```sh
    # Direct client-to-destination baseline (still crosses the emulated transit router).
-   docker compose -f deployments/docker/compose.yaml exec ramp-client curl --fail --show-error http://172.28.20.11/
+   docker compose -f deployments/docker/compose.yaml exec ramp-client curl --fail --show-error http://172.28.20.11:8080/health
 
    # Same destination through the local RAMP SOCKS5 ingress.
-   docker compose -f deployments/docker/compose.yaml exec ramp-client curl --fail --show-error --socks5-hostname 127.0.0.1:1080 http://lab-destination/
+   docker compose -f deployments/docker/compose.yaml exec ramp-client curl --fail --show-error --socks5-hostname 127.0.0.1:1080 http://lab-destination:8080/health
    ```
 
    You can also test from the host using `curl --socks5-hostname 127.0.0.1:1080 http://lab-destination/`.
+
+## Run repeatable experiments
+
+The destination exposes `/health` and `/payload?bytes=N` (1 byte to 100 MiB). The experiment runner uses only Python's standard library and writes a manifest, timestamped raw JSONL samples, qdisc/container snapshots, summary statistics and a Markdown report.
+
+From the repository root:
+
+```sh
+python laboratory/scripts/run_experiments.py --scenario baseline --scenario latency-100ms --repetitions 3 --warmup 1 --payload-bytes 10485760
+```
+
+Run all profiles from `laboratory/scenarios/matrix.json` by omitting `--scenario`. Use `--mode direct` or `--mode ramp-fixed` for a single path, or the default `--mode both` for a direct-versus-RAMP comparison. Results are written under `laboratory/results/<date>/<experiment-id>/` and are ignored by Git.
+
+The report includes goodput, transfer duration, success rate, mean, median, standard deviation and p95. Curl's connect time in RAMP mode measures the local SOCKS5 peer, not the internal TLS handshake; it must not be reported as TLS handshake duration. CPU/memory snapshots and `tc -s qdisc` output are retained as raw supporting observations.
 
 ## Apply a network condition
 
