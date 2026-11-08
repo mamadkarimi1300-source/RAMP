@@ -51,7 +51,7 @@ echo "[3/6] Wait for the destination and RAMP SOCKS5 path"
 ready=0
 i=0
 while [ "$i" -lt 45 ]; do
-  if compose exec -T ramp-client curl --fail --silent --show-error --max-time 3 http://172.28.20.11/ >/dev/null 2>&1; then
+  if compose exec -T ramp-client curl --fail --silent --show-error --max-time 3 http://172.28.20.11:8080/health >/dev/null 2>&1; then
     ready=1
     break
   fi
@@ -72,7 +72,7 @@ fi
 proxied_ready=0
 i=0
 while [ "$i" -lt 30 ]; do
-  if proxied="$(compose exec -T ramp-client curl --fail --silent --show-error --max-time 5 --socks5-hostname 127.0.0.1:1080 http://lab-destination/ 2>/dev/null)"; then
+  if proxied="$(compose exec -T ramp-client curl --fail --silent --show-error --max-time 5 --socks5-hostname 127.0.0.1:1080 http://lab-destination:8080/health 2>/dev/null)"; then
     proxied_ready=1
     break
   fi
