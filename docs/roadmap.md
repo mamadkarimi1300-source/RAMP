@@ -32,7 +32,8 @@
 - [x] Smoke-test direct and SOCKS5 paths and verify NetEm qdisc installation.
 - [ ] Repeat validation on local Docker Desktop / WSL2.
 - [ ] Verify each impairment profile's effect using independent RTT measurements.
-- [ ] Add explicit RTT probes, true RAMP TLS handshake timing, active-session counts and recovery-duration instrumentation.
+- [x] Add client-to-bridge ICMP RTT/packet-loss probes and a certificate-verified bridge TLS handshake probe.
+- [ ] Add active-session counts and recovery-duration instrumentation.
 - [ ] Add statistical direct-baseline deltas and confidence intervals to the report.
 - [ ] Validate all impairment profiles against independent measurements and prove no route bypass.
 - [ ] Add failure-injection tests for bridge unavailability and recovery behavior.
