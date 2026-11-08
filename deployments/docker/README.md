@@ -90,7 +90,7 @@ python laboratory/scripts/run_experiments.py --scenario baseline --scenario late
 
 Run all profiles from `laboratory/scenarios/matrix.json` by omitting `--scenario`. Use `--mode direct` or `--mode ramp-fixed` for a single path, or the default `--mode both` for a direct-versus-RAMP comparison. Results are written under `laboratory/results/<date>/<experiment-id>/` and are ignored by Git.
 
-The report includes bridge RTT (ICMP), packet-loss observations, verified TLS handshake duration, goodput, transfer duration, success rate, mean, median, standard deviation, p95 and relative goodput/transfer-duration changes for RAMP versus the direct baseline. The TLS probe measures the TLS handshake only, not the RAMP OPEN application exchange. Curl's connect time in RAMP mode measures the local SOCKS5 peer, not the internal TLS handshake; it must not be reported as TLS handshake duration. CPU/memory snapshots and `tc -s qdisc` output are retained as raw supporting observations.
+The report includes bridge RTT (ICMP), packet-loss observations, verified TLS handshake duration, goodput, transfer duration, success rate, mean, median, standard deviation, p95 and relative goodput/transfer-duration changes for RAMP versus the direct baseline. The TLS metric is calculated as curl `time_appconnect - time_connect`, separating TCP establishment from TLS negotiation; it does not include the RAMP OPEN application exchange. It is reported only for RAMP mode. Curl's connect time in RAMP mode measures the local SOCKS5 peer, not the internal TLS handshake; it must not be reported as TLS handshake duration. CPU/memory snapshots and `tc -s qdisc` output are retained as raw supporting observations.
 
 ## Apply a network condition
 
