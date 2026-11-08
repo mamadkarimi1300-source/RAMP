@@ -24,3 +24,8 @@ coverage.out
 .idea/
 .DS_Store
 Thumbs.db
+
+# Generated laboratory runs and Python cache
+laboratory/results/
+__pycache__/
+*.py[cod]
