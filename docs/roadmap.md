@@ -23,13 +23,16 @@
 - [x] Add Compose topology with client zone, bridge zone and a transit-router service.
 - [x] Add local-only CA and bridge certificate generation helper.
 - [x] Add Linux traffic-shaping configuration for delay, jitter, loss and rate limits.
-- [x] Add a controlled HTTP destination and direct-versus-SOCKS5 smoke-test instructions.
+- [x] Add a controlled HTTP destination with configurable deterministic payloads and direct-versus-SOCKS5 smoke tests.
+- [x] Add a machine-readable scenario matrix and standard-library experiment runner with repetitions, warm-ups and raw JSONL samples.
+- [x] Add initial goodput/transfer timing, qdisc counters, container CPU/memory snapshots and statistical Markdown/JSON reports.
+- [x] Add Python unit tests and CI workflow integration for the laboratory runner.
 - [ ] Build both images and validate Compose configuration on Docker Desktop / WSL2.
 - [ ] Prove forward and return traffic traverse the emulator; confirm no bypass route exists.
 - [ ] Verify each impairment profile against independent measurements.
-- [ ] Add a repeatable workload runner with experiment IDs, repetitions and raw result manifests.
-- [ ] Collect RTT, throughput/goodput, connect/handshake timing, CPU, memory and container/network counters.
-- [ ] Add report generation and statistical baseline comparison.
+- [ ] Add explicit RTT probes, true RAMP TLS handshake timing, active-session counts and recovery-duration instrumentation.
+- [ ] Add statistical direct-baseline deltas and confidence intervals to the report.
+- [ ] Validate all impairment profiles against independent measurements and prove no route bypass.
 - [ ] Add failure-injection tests for bridge unavailability and recovery behavior.
 
 ## v0.2 target
