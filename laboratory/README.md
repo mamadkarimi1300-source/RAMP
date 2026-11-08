@@ -40,7 +40,7 @@ The client and bridge are on separate Docker networks. Specific routes send clie
 - Laboratory architecture, topology specification, scenario matrix and experiment contract: added.
 - Dockerfiles, Compose topology, local certificate helper and Linux traffic-emulation router: added as an initial implementation scaffold.
 - Repeatable Docker smoke-test script: added; checks Compose validation, image builds, direct and SOCKS5 requests, transit-router packet capture and NetEm qdisc installation.
-- GitHub Actions Docker integration workflow: added; its first run and local Docker Desktop/WSL2 execution must pass before the testbed is considered runtime-validated.
+- GitHub Actions Docker integration workflow: **passed** on GitHub-hosted Ubuntu at commit `2cbcc003af44b30f39833040cc58fac6ff55475d`; image builds, direct/SOCKS5 traffic, forward and return packet captures, NetEm qdisc installation and a two-scenario experiment all succeeded. Local Docker Desktop/WSL2 validation is still pending.
 - Controlled HTTP workload destination with configurable payload size: implemented.
 - Machine-readable scenario matrix in `scenarios/matrix.json`: implemented alongside the human-readable YAML matrix.
 - Standard-library experiment runner with direct/RAMP modes, repetitions, warm-ups, raw JSONL, manifests, qdisc/container snapshots and statistical report: implemented; runtime execution remains pending.
